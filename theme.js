@@ -197,8 +197,8 @@ label input,label select,label textarea{margin-top:8px}
 .pod .pfoot{margin-top:20px;padding-top:16px;border-top:1px solid var(--line-soft)}
 
 /* ================= outbid-style board ================= */
-.ob-hero{padding:var(--s4) 0 var(--s3);border-bottom:1px solid var(--line-soft)}
-.ob-tabs{display:flex;gap:22px;margin-bottom:var(--s3)}
+.ob-hero{padding:var(--s3) 0 var(--s3);border-bottom:1px solid var(--line-soft)}
+.ob-tabs{display:flex;gap:22px;margin-bottom:var(--s3);border-bottom:1px solid var(--line-soft)}
 .obt{font-size:12px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:#c9d1cc;
   padding-bottom:10px;border-bottom:1px solid transparent;transition:color .3s,border-color .3s}
 .obt:hover{color:#fff}
@@ -223,7 +223,7 @@ label input,label select,label textarea{margin-top:8px}
 @media(max-width:900px){.cw-row{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.cw-row{grid-template-columns:1fr}.cw-row .btn{width:100%}}
 
-.ob-cats{margin:var(--s3) 0 var(--s2)}
+.ob-cats{margin:0 0 var(--s3)}
 .ob-list{border-top:1px solid var(--line-soft)}
 .lr{display:grid;grid-template-columns:52px 40px minmax(0,1fr) auto;gap:clamp(12px,1.6vw,20px);
   align-items:start;padding:20px 4px;border-bottom:1px solid var(--line-soft);
