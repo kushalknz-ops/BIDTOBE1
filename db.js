@@ -38,17 +38,42 @@ const RULES = {
 };
 
 const CATEGORIES = [
-  { slug: 'ai-agents-automation', name: 'AI Agents & Automation' },
-  { slug: 'software-saas', name: 'Software & SaaS' },
-  { slug: 'marketing-advertising', name: 'Marketing & Advertising' },
-  { slug: 'web-design-development', name: 'Web Design & Development' },
-  { slug: 'trades-construction', name: 'Trades & Construction' },
-  { slug: 'legal-accounting', name: 'Legal & Accounting' },
-  { slug: 'real-estate', name: 'Real Estate' },
-  { slug: 'hospitality-food', name: 'Hospitality & Food' },
-  { slug: 'health-wellness', name: 'Health & Wellness' },
-  { slug: 'automotive', name: 'Automotive' }
+  // Mirrors the outbid.lol industry set, adapted for New Zealand trades and services.
+  { slug: 'ai-agents-infrastructure',   name: 'AI Agents & Infrastructure' },
+  { slug: 'seo-ai-visibility',          name: 'SEO & AI Visibility' },
+  { slug: 'marketing-advertising',      name: 'Marketing & Advertising' },
+  { slug: 'developer-tools',            name: 'Developer Tools' },
+  { slug: 'business-finance-legal',     name: 'Business, Finance & Legal' },
+  { slug: 'security-privacy-compliance',name: 'Security, Privacy & Compliance' },
+  { slug: 'health-fitness-wellness',    name: 'Health, Fitness & Wellness' },
+  { slug: 'social-media-creator-tools', name: 'Social Media & Creator Tools' },
+  { slug: 'hiring-jobs-careers',        name: 'Hiring, Jobs & Careers' },
+  { slug: 'education-learning',         name: 'Education & Learning' },
+  { slug: 'agencies-studios-services',  name: 'Agencies, Studios & Services' },
+  { slug: 'ecommerce-retail',           name: 'Ecommerce & Retail' },
+  { slug: 'games-entertainment',        name: 'Games & Entertainment' },
+  { slug: 'productivity-personal-tools',name: 'Productivity & Personal Tools' },
+  { slug: 'design-creative',            name: 'Design & Creative' },
+  { slug: 'writing-content',            name: 'Writing & Content' },
+  { slug: 'ai-media-generation',        name: 'AI Media Generation' },
+  { slug: 'audio-voice-podcasting',     name: 'Audio, Voice & Podcasting' },
+  { slug: 'sales-lead-generation',      name: 'Sales & Lead Generation' },
+  { slug: 'travel-local-lifestyle',     name: 'Travel, Local & Lifestyle' },
+  { slug: 'real-estate-property',       name: 'Real Estate & Property' },
+  { slug: 'media-news',                 name: 'Media & News' },
+  { slug: 'directories-launch',         name: 'Directories, Launch & Discovery' },
+  { slug: 'domains-web-assets',         name: 'Domains & Web Assets' },
+  { slug: 'people-profiles',            name: 'People & Profiles' },
+  // New Zealand additions \u2014 the trades and services that make up most NZ business.
+  { slug: 'trades-construction',        name: 'Trades & Construction' },
+  { slug: 'hospitality-food',           name: 'Hospitality & Food' },
+  { slug: 'automotive',                 name: 'Automotive' },
+  { slug: 'primary-industries',         name: 'Farming & Primary Industries' },
+  { slug: 'tourism-accommodation',      name: 'Tourism & Accommodation' },
+  { slug: 'transport-logistics',        name: 'Transport & Logistics' },
+  { slug: 'other',                      name: 'Other' }
 ];
+
 const CITIES = ['New Zealand', 'Auckland', 'Wellington', 'Christchurch', 'Hamilton', 'Tauranga', 'Dunedin', 'Queenstown'];
 
 const catName = s => (CATEGORIES.find(c => c.slug === s) || { name: 'Other' }).name;
@@ -152,7 +177,7 @@ function createListing(d) {
   while (db.listings.some(l => l.slug === slug)) slug = (slugify(name) || 'listing') + '-' + (++i);
   const l = {                                             // FIX: explicit fields only, no mass assignment
     id: uid(), slug, urlKey, name, url, tagline,
-    category: CATEGORIES.some(c => c.slug === d.category) ? d.category : 'ai-agents-automation',
+    category: CATEGORIES.some(c => c.slug === d.category) ? d.category : 'other',
     city: CITIES.includes(d.city) ? d.city : 'New Zealand',
     phone: String(d.phone || '').replace(/[^0-9+()\s-]/g, '').slice(0, 24),
     email: /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(String(d.email || '')) ? String(d.email).slice(0, 120) : '',

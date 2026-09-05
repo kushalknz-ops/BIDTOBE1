@@ -355,9 +355,17 @@ function board(kind, f, extra = {}) {
   const rest = cfg.list.slice(3);
   return layout(cfg.title + ' \u00b7 BIDTOBE1', `
   <section class="ob-hero"><div class="wrap" id="main" style="padding-bottom:0">
-    <div class="chips ob-cats" data-rv="fade">
-      <a class="chip ${!f.category ? 'on' : ''}" href="${kind === 'all' ? '/' : '/' + kind}">All categories</a>
-      ${D.CATEGORIES.map(c => `<a class="chip ${f.category === c.slug ? 'on' : ''}" href="${kind === 'all' ? '/' : '/' + kind}?category=${c.slug}">${esc(c.name)}</a>`).join('')}
+    <div class="catscroll" data-rv="fade">
+      <button class="cs-arrow cs-prev" type="button" aria-label="Scroll categories left" data-scroll="-1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="cs-track" id="cstrack" role="tablist" aria-label="Categories">
+        <a class="chip ${!f.category ? 'on' : ''}" href="${kind === 'all' ? '/' : '/' + kind}">All categories</a>
+        ${D.CATEGORIES.map(c => `<a class="chip ${f.category === c.slug ? 'on' : ''}" href="${kind === 'all' ? '/' : '/' + kind}?category=${c.slug}">${esc(c.name)}</a>`).join('')}
+      </div>
+      <button class="cs-arrow cs-next" type="button" aria-label="Scroll categories right" data-scroll="1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
     </div>
     <div class="ob-tabs" data-rv="fade">
       <a class="obt ${kind === 'all' ? 'on' : ''}" href="/${f.category ? '?category=' + f.category : ''}">All-time</a>

@@ -223,7 +223,20 @@ label input,label select,label textarea{margin-top:8px}
 @media(max-width:900px){.cw-row{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.cw-row{grid-template-columns:1fr}.cw-row .btn{width:100%}}
 
-.ob-cats{margin:0 0 var(--s3)}
+/* single-line category scroller with arrows */
+.catscroll{display:flex;align-items:center;gap:8px;margin:0 0 var(--s3);position:relative}
+.cs-track{display:flex;gap:8px;overflow-x:auto;scroll-behavior:smooth;flex:1;min-width:0;
+  scrollbar-width:none;-ms-overflow-style:none;padding:1px 0;scroll-snap-type:x proximity}
+.cs-track::-webkit-scrollbar{display:none}
+.cs-track .chip{flex:none;white-space:nowrap;scroll-snap-align:start}
+.cs-arrow{flex:none;width:36px;height:36px;display:grid;place-items:center;cursor:pointer;
+  border:1px solid var(--line);background:rgba(5,7,10,.9);color:#c9d1cc;padding:0;
+  transition:color .3s,border-color .3s,opacity .3s}
+.cs-arrow svg{width:15px;height:15px}
+.cs-arrow:hover{color:#fff;border-color:var(--bone-dim)}
+.cs-arrow[disabled]{opacity:.28;cursor:default}
+.cs-arrow[disabled]:hover{color:#c9d1cc;border-color:var(--line)}
+@media(max-width:640px){.cs-arrow{display:none}.cs-track{scroll-snap-type:none}}
 .ob-list{border-top:1px solid var(--line-soft)}
 .lr{display:grid;grid-template-columns:52px 40px minmax(0,1fr) auto;gap:clamp(12px,1.6vw,20px);
   align-items:start;padding:20px 4px;border-bottom:1px solid var(--line-soft);
@@ -646,6 +659,27 @@ module.exports.JS = `
     },{rootMargin:'0px 0px -8% 0px',threshold:.08});
     els.forEach(function(e){io.observe(e)});
   }
+  // category scroller arrows
+  (function(){
+    var tr = document.getElementById('cstrack'); if(!tr) return;
+    var prev = document.querySelector('.cs-prev'), next = document.querySelector('.cs-next');
+    function sync(){
+      var max = tr.scrollWidth - tr.clientWidth - 2;
+      if(prev) prev.disabled = tr.scrollLeft <= 2;
+      if(next) next.disabled = tr.scrollLeft >= max;
+    }
+    document.addEventListener('click', function(e){
+      var b = e.target.closest('.cs-arrow'); if(!b) return;
+      tr.scrollBy({ left: Number(b.dataset.scroll) * Math.max(220, tr.clientWidth * 0.75), behavior: R ? 'auto' : 'smooth' });
+    });
+    tr.addEventListener('scroll', sync, { passive: true });
+    addEventListener('resize', sync);
+    // bring the active chip into view on load
+    var on = tr.querySelector('.chip.on');
+    if(on && on.offsetLeft > tr.clientWidth - on.offsetWidth) tr.scrollLeft = on.offsetLeft - 16;
+    sync();
+  })();
+
   // hero amount stepper
   document.addEventListener('click', function(e){
     var b = e.target.closest('.cw-step'); if(!b) return;
