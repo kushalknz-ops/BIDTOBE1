@@ -109,6 +109,31 @@ function row(l, i, amount, claimFor, d = 0) {
   </div>`;
 }
 
+// Outbid-style row: rank, favicon, title, amount, description, meta line, claim CTA.
+function listRow(l, i, amount, catSlug) {
+  const price = (catSlug || l.category) ? D.minToTopCategory(l.category) : amount + D.RULES.TOP_STEP;
+  const claim = i === 0 ? price : amount + D.RULES.TOP_STEP;
+  return `<article class="lr${i === 0 ? ' lr-1' : ''}" data-rv="up" data-d="${Math.min(i, 8)}">
+    <div class="lr-rank">#${i + 1}</div>
+    <img class="lr-ico" src="${fav(l.url)}" alt="" loading="lazy">
+    <div class="lr-body">
+      <a class="lr-title" href="/go/${l.id}" target="_blank" rel="nofollow noopener">${esc(l.name)}${badges(l)}</a>
+      <p class="lr-desc">${esc(l.tagline)}</p>
+      <div class="lr-meta">
+        <a href="/category/${l.category}">${esc(D.catName(l.category))}</a>
+        <span>${ago(l.createdAt)}</span>
+        <span>${esc(String(l.url).replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0])}</span>
+        <span>${l.clicks.toLocaleString()} clicks</span>
+        <a href="/business/${l.slug}">see details</a>
+      </div>
+    </div>
+    <div class="lr-right">
+      <div class="lr-amt">${money(amount)}</div>
+      <a class="lr-claim" href="/raise/${l.id}">claim this rank for ${money(claim)}</a>
+    </div>
+  </article>`;
+}
+
 function featuredCard(top, amount, catSlug, opts = {}) {
   const step = D.RULES.TOP_STEP;
   const lab = opts.national ? 'All over New Zealand' : (catSlug ? D.catName(catSlug) : 'New Zealand');
@@ -182,6 +207,35 @@ function filterBar(base, f) {
     ${D.CATEGORIES.map(c => `<a class="chip ${f.category === c.slug ? 'on' : ''}" href="${q(f.category === c.slug ? '' : c.slug)}">${esc(c.name)}</a>`).join('')}</div>`;
 }
 
+function claimWidget(f) {
+  const cat = f.category || D.CATEGORIES[0].slug;
+  const need = D.minToTopCategory(cat);
+  return `<div class="cw" data-rv="up" data-d="2">
+    <form class="cw-form" method="post" action="/submit">
+      <div class="cw-line">
+        <span class="cw-lead">Claim #1 for</span>
+        <div class="cw-amt">
+          <button class="cw-step" type="button" data-step="-5" aria-label="Decrease">\u2212</button>
+          <span class="cw-dollar">$</span>
+          <input class="cw-input" name="amount" type="number" inputmode="numeric" value="${need}"
+                 min="${D.RULES.MIN_BID}" max="${D.RULES.MAX_BID}" aria-label="Amount in dollars">
+          <button class="cw-step" type="button" data-step="5" aria-label="Increase">+</button>
+        </div>
+      </div>
+      <div class="cw-row">
+        <input name="url" placeholder="yourbusiness.co.nz" required aria-label="Website">
+        <input name="name" placeholder="Business name" required aria-label="Business name">
+        <select name="category" aria-label="Choose a category" onchange="location.href='/?category='+this.value">
+          ${D.CATEGORIES.map(c => `<option value="${c.slug}" ${cat === c.slug ? 'selected' : ''}>${esc(c.name)} \u2014 ${money(D.minToTopCategory(c.slug))}</option>`).join('')}
+        </select>
+        <button class="btn verm">Claim rank</button>
+      </div>
+      <p class="cw-note">Each category is its own auction. #1 in ${esc(D.catName(cat))} costs ${money(need)} \u2014
+        independent of every other category.</p>
+    </form>
+  </div>`;
+}
+
 function claimBox(f) {
   const cat = f.category || D.CATEGORIES[0].slug;
   const need = D.minToTopCategory(cat);
@@ -242,6 +296,36 @@ function heroProof(list, amt) {
   </div>`;
 }
 
+function todayInline() {
+  const top = D.todayBoard().slice(0, 3);
+  if (!top.length) return '';
+  return `<section class="inline-blk" data-rv="up">
+    <div class="ib-head"><a href="/today"><h2>Today\u2019s top ranking</h2></a><a class="ib-all" href="/today">See all</a></div>
+    <div class="ib-grid">${top.map((l, i) => `<a class="ib-card" href="/business/${l.slug}">
+      <div class="ib-rk">#${i + 1}</div>
+      <img class="ib-ico" src="${fav(l.url)}" alt="" loading="lazy">
+      <div class="ib-name">${esc(l.name)}</div>
+      <div class="ib-amt">${money(l.windowTotal)}</div>
+      <p class="ib-desc">${esc(l.tagline)}</p>
+    </a>`).join('')}</div>
+  </section>`;
+}
+
+function activityInline() {
+  const a = D.recentActivity(5);
+  if (!a.length) return '';
+  return `<section class="inline-blk" data-rv="up">
+    <div class="ib-head"><h2>Latest activity</h2></div>
+    <div class="act">${a.map(x => `<a class="act-row" href="/business/${x.listing.slug}">
+      <img class="act-ico" src="${fav(x.listing.url)}" alt="" loading="lazy">
+      <span class="act-name">${esc(x.listing.name)}</span>
+      <span class="act-meta">at #${x.rank} \u00b7 ${money(x.amount)}</span>
+      <span class="act-ago">${ago(x.ts)}</span>
+    </a>`).join('')}</div>
+    <a class="ib-all" href="/today">Show more</a>
+  </section>`;
+}
+
 function activityFeed() {
   const a = D.recentActivity(7);
   return `<div class="panel feed" data-rv="up"><div class="eyebrow" style="margin-bottom:16px"><span class="dot"></span> Latest activity</div>
@@ -269,44 +353,32 @@ function board(kind, f, extra = {}) {
       blurb: 'Ranked by spend in the last twenty-four hours.' }
   }[kind];
   const rest = cfg.list.slice(3);
-  return layout(cfg.title + ' · BIDTOBE1', `
-  <section class="hero"><div class="wrap" id="main" style="padding-bottom:0">
-    <div class="eyebrow" data-rv="fade"><span class="dot"></span> ${esc(cfg.lede)}</div>
-    ${kind === 'all' ? '<img class="hero-mark" src="/logo-mark.png" alt="" width="104" height="104" data-rv="fade">' : ''}
-    <h1 class="display h-hero">${words(cfg.head[0])}${cfg.head[1] ? ` <span class="vermilion">${words(cfg.head[1])}</span>` : ''}</h1>
-    <div class="hero-grid">
-      <div class="hero-left">
-        <p class="body-lg" data-rv="up" data-d="2" style="max-width:46ch">${esc(cfg.intro)}</p>
-        <div class="hero-cta" data-rv="up" data-d="4">
-          <a class="btn" href="/submit">Claim a rank ${ARROW}</a>
-          <a class="arrowlink" href="/rules">Read the rules <span class="ar">${ARROW}</span></a>
-        </div>
-        ${heroProof(cfg.list, cfg.amt)}
-      </div>
-      ${claimBox(f)}
+  return layout(cfg.title + ' \u00b7 BIDTOBE1', `
+  <section class="ob-hero"><div class="wrap" id="main" style="padding-bottom:0">
+    <div class="ob-tabs" data-rv="fade">
+      <a class="obt ${kind === 'all' ? 'on' : ''}" href="/${f.category ? '?category=' + f.category : ''}">All-time</a>
+      <a class="obt ${kind === 'today' ? 'on' : ''}" href="/today${f.category ? '?category=' + f.category : ''}">Today</a>
+      <a class="obt" href="/nz">All over NZ</a>
     </div>
+    ${claimWidget(f)}
   </div></section>
 
   <div class="wrap">
-    <div class="tabs" data-rv="fade">
-      <a class="tab ${kind === 'all' ? 'on' : ''}" href="${kind === 'all' ? '#' : '/'}${f.category ? (kind === 'all' ? '' : '?category=' + f.category) : ''}">All-time</a>
-      <a class="tab ${kind === 'today' ? 'on' : ''}" href="/today${f.category ? '?category=' + f.category : ''}">Today</a>
+    <div class="chips ob-cats" data-rv="fade">
+      <a class="chip ${!f.category ? 'on' : ''}" href="${kind === 'all' ? '/' : '/' + kind}">All categories</a>
+      ${D.CATEGORIES.map(c => `<a class="chip ${f.category === c.slug ? 'on' : ''}" href="${kind === 'all' ? '/' : '/' + kind}?category=${c.slug}">${esc(c.name)}</a>`).join('')}
     </div>
-    ${filterBar(kind === 'all' ? '/' : '/' + kind, f)}
-    ${secHead(cfg.n, cfg.title, cfg.list.length + ' listed')}
-    <p class="sec-lede" data-rv="fade">${esc(cfg.blurb)}</p>
 
-    ${kind === 'all' && !f.category ? categoryGrid() : (cfg.list.length ? boardTiers(cfg.list, cfg.amt, f.category)
-      : UI.empty({ icon: '\u25c7', title: 'This board is empty',
-          desc: `Nobody has claimed a rank here yet. The first listing takes #1 for ${money(D.RULES.MIN_BID)}.`,
-          actions: `<a class="btn verm" href="/submit">Take #1 for ${money(D.RULES.MIN_BID)}</a><a class="btn ghost" href="/rules">How it works</a>` }))}
-
-    <div class="board-aside">
-      ${activityFeed()}
-      <div class="panel" data-rv="up"><div class="eyebrow" style="margin-bottom:14px"><span class="dot"></span> Homepage takeover</div>
-        <p class="body">Pay ${D.RULES.TAKEOVER_MULTIPLE}\u00d7 the current #1 of your category and own the banner across every page for ${D.RULES.TAKEOVER_HOURS} hours.</p>
-        <a class="claim" style="display:inline-block;margin-top:14px" href="/takeover">Buy a takeover \u2192</a></div>
-    </div>
+    ${cfg.list.length ? `<div class="ob-list">
+      ${cfg.list.slice(0, 3).map((l, i) => listRow(l, i, cfg.amt(l), f.category)).join('')}
+      ${kind === 'all' ? todayInline() : ''}
+      ${cfg.list.slice(3, 10).map((l, i) => listRow(l, i + 3, cfg.amt(l), f.category)).join('')}
+      ${activityInline()}
+      ${cfg.list.slice(10).map((l, i) => listRow(l, i + 10, cfg.amt(l), f.category)).join('')}
+    </div>`
+    : UI.empty({ icon: '\u25c7', title: 'Nothing on this board yet',
+        desc: `The first listing takes #1 for ${money(D.RULES.MIN_BID)} and holds it until someone bids higher.`,
+        actions: `<a class="btn verm" href="/submit">Take #1 for ${money(D.RULES.MIN_BID)}</a><a class="btn ghost" href="/rules">How it works</a>` })}
   </div>`, kind, jsonld({
     '@context': 'https://schema.org', '@type': 'ItemList', name: cfg.title, description: cfg.blurb,
     numberOfItems: cfg.list.length,

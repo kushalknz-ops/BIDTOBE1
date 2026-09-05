@@ -73,7 +73,7 @@ const PAGES = ['/', '/today', '/rules', '/about', '/ask', '/submit', '/dashboard
       if (d.m && r.zoomy.length) fails.push(`[iOS-ZOOM] ${d.name} ${path} :: ${r.zoomy.join(', ')}`);
     }
     // burger behaviour
-    if (d.w <= 960) {
+    if (d.w <= 1080) {
       await page.goto(BASE + '/', { waitUntil: 'networkidle0' });
       const nav = await page.evaluate(() => {
         const b = document.getElementById('burger'), nl = document.getElementById('navlinks');
