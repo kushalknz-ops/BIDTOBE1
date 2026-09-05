@@ -195,6 +195,62 @@ label input,label select,label textarea{margin-top:8px}
 .pod.p1:before{content:'';position:absolute;top:-1px;left:0;right:0;height:1px;background:var(--vermilion)}
 .pod .pfoot{margin-top:20px;padding-top:16px;border-top:1px solid var(--line-soft)}
 
+/* ---------- category grid (home) ---------- */
+.catgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:1px;
+  background:var(--line-soft);border:1px solid var(--line-soft);margin-top:var(--s1)}
+.cg{background:var(--ink);padding:20px;display:flex;flex-direction:column;gap:14px;
+  transition:background .4s var(--ease)}
+.cg:hover{background:#0d131b}
+.cg-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.cg-name{font-size:13px;letter-spacing:.13em;text-transform:uppercase;color:#fff}
+.cg-n{font-size:11.5px;color:#b4bdb8;font-variant-numeric:tabular-nums}
+.cg-leader{display:flex;align-items:center;gap:9px;font-size:14.5px;color:#e6ebe8;min-height:24px}
+.cg-ico{width:20px;height:20px;object-fit:contain;border:1px solid var(--line-soft);flex:none}
+.cg-leader span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cg-none{color:#b4bdb8;font-size:13.5px}
+.cg-foot{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  padding-top:12px;border-top:1px solid var(--line-soft);margin-top:auto}
+.cg-amt{font-size:21px;font-weight:300;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:#fff}
+.cg-price{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:#c9d1cc;text-align:right}
+.cg:hover .cg-price{color:var(--vermilion)}
+.cg-open .cg-amt{color:#7c8781}
+
+/* ---------- overall NZ champion ---------- */
+.nz1{border:1px solid var(--line);background:linear-gradient(150deg,#1a1108,#0a0e14);margin-top:var(--s3)}
+.nz1-badge{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);
+  padding:14px clamp(20px,2.4vw,30px);border-bottom:1px solid var(--line-soft)}
+.nz1-body{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:clamp(16px,2.2vw,28px);
+  align-items:center;padding:clamp(22px,2.6vw,32px)}
+.nz1-ico{width:52px;height:52px;object-fit:contain;border:1px solid var(--line-soft)}
+.nz1-name{font-size:clamp(21px,2.3vw,32px);text-transform:uppercase;letter-spacing:-.015em;margin:0;color:#fff}
+.nz1-pitch{font-size:15px;color:#e6ebe8;margin:8px 0 0;line-height:1.55}
+.nz1-meta{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:#c9d1cc;align-items:center}
+.nz1-meta span{display:inline-flex;align-items:center;min-height:26px}
+.nz1-meta a{color:var(--gold);border-bottom:1px solid rgba(201,162,74,.4);display:inline-flex;
+  align-items:center;min-height:26px;padding:3px 0}
+.nz1-amt{text-align:right}
+.nz1-amt b{display:block;font-size:clamp(30px,3.4vw,48px);font-weight:300;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;color:#fff;line-height:1}
+.nz1-amt span{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#c9d1cc;margin-top:8px}
+.nz1-foot{padding:16px clamp(20px,2.4vw,30px);border-top:1px solid var(--line-soft);font-size:14px;color:#e6ebe8}
+.nz1-foot a{color:var(--gold);display:inline-flex;align-items:center;min-height:26px;padding:2px 0}.nz1-foot b{color:#fff;font-weight:400}
+.nz-row .t3-amt{color:#fff}
+
+/* ---------- category stat bar ---------- */
+.cat-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
+  background:var(--line-soft);border:1px solid var(--line-soft);margin-top:var(--s3)}
+.cat-bar > div{background:var(--ink);padding:18px}
+.cat-bar span{display:block;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#c9d1cc}
+.cat-bar b{display:block;font-size:26px;font-weight:300;letter-spacing:-.025em;margin-top:6px;
+  font-variant-numeric:tabular-nums;color:#fff}
+.hp-lab{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9d1cc;margin-bottom:12px}
+
+@media(max-width:760px){
+  .nz1-body{grid-template-columns:auto minmax(0,1fr);gap:14px}
+  .nz1-amt{grid-column:1/-1;text-align:left;padding-top:14px;border-top:1px solid var(--line-soft)}
+}
+
 /* ---------- board tiers (01 hero / 02-03 pair / 04+ rows) ---------- */
 .t1{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);
   border:1px solid var(--line);background:linear-gradient(150deg,#11161d,#0a0e14);margin-top:var(--s1)}

@@ -54,25 +54,84 @@ const CITIES = ['New Zealand', 'Auckland', 'Wellington', 'Christchurch', 'Hamilt
 const catName = s => (CATEGORIES.find(c => c.slug === s) || { name: 'Other' }).name;
 
 // ---------- boards ----------
+// MODEL: every category is an INDEPENDENT auction with its own highest bid,
+// history, ranking and price-to-top. Bids in one category never affect another.
+// The national board is a READ-ONLY aggregate: it compares each category's
+// current leader and surfaces the single highest. It never sets a bid price.
 const dayKey = (d = new Date()) => d.toISOString().slice(0, 10);
 const active = () => db.listings.filter(l => l.active);
-// Ranking dimensions: overall (all of New Zealand) and category. City is profile info only.
-const match = (l, f) => (!f.category || l.category === f.category);
+const catOf = slug => CATEGORIES.some(c => c.slug === slug) ? slug : null;
 
-function allTime(f = {}) {
-  return active().filter(l => match(l, f)).sort((a, b) => b.total - a.total || a.createdAt - b.createdAt);
+// Deterministic ordering inside one auction:
+//   amount desc -> earlier reachedAt -> listing id (never random)
+function cmp(a, b) {
+  return (b.total - a.total)
+      || ((a.reachedAt || a.createdAt) - (b.reachedAt || b.createdAt))
+      || String(a.id).localeCompare(String(b.id));
 }
+
+// ---- 1. INDEPENDENT CATEGORY AUCTION ----
+function categoryBoard(slug) {
+  const c = catOf(slug); if (!c) return [];
+  return active().filter(l => l.category === c).sort(cmp);
+}
+function categoryLeader(slug) { return categoryBoard(slug)[0] || null; }
+function categoryTop(slug) { const l = categoryLeader(slug); return l ? l.total : 0; }
+// Price to take #1 in THIS category only. Never references any other category.
+function minToTopCategory(slug) {
+  const t = categoryTop(slug);
+  return t ? t + RULES.TOP_STEP : RULES.MIN_BID;
+}
+function rankInCategory(id) {
+  const l = db.listings.find(x => x.id === id); if (!l) return 0;
+  return categoryBoard(l.category).findIndex(x => x.id === id) + 1;
+}
+function categoryHistory(slug, n = 20) {
+  const ids = new Set(categoryBoard(slug).map(l => l.id));
+  return db.bids.filter(b => ids.has(b.listingId)).sort((a, b) => b.ts - a.ts).slice(0, n)
+    .map(b => ({ ...b, listing: db.listings.find(l => l.id === b.listingId) }));
+}
+// Every category with its own independent price and leader.
+function categoryPrices() {
+  return CATEGORIES.map(c => {
+    const board = categoryBoard(c.slug), leader = board[0] || null;
+    return { ...c, leader, top: leader ? leader.total : 0,
+      priceToTop: leader ? leader.total + RULES.TOP_STEP : RULES.MIN_BID,
+      count: board.length, reachedAt: leader ? (leader.reachedAt || leader.createdAt) : null };
+  });
+}
+
+// ---- 3. OVERALL NEW ZEALAND RANKING (read-only aggregate) ----
+// Takes each category's current leader, compares them, returns them ordered.
+// Tie-break: equal amount -> earlier reachedAt -> listing id.
+function categoryLeaders() {
+  return CATEGORIES.map(c => {
+    const l = categoryLeader(c.slug);
+    return l ? { ...l, categoryName: c.name, categorySlug: c.slug,
+      reachedAt: l.reachedAt || l.createdAt } : null;
+  }).filter(Boolean).sort(cmp);
+}
+function overallNo1() { return categoryLeaders()[0] || null; }
+
+// ---- Today: a time window over one category's auction (never a price source) ----
 function windowBoard(hours, f = {}) {
   const cut = Date.now() - hours * 3600e3, sums = {};
   db.bids.forEach(b => { if (b.ts >= cut) sums[b.listingId] = (sums[b.listingId] || 0) + b.amount; });
-  return active().filter(l => sums[l.id] && match(l, f))
+  return active().filter(l => sums[l.id] && (!f.category || l.category === f.category))
     .map(l => ({ ...l, windowTotal: sums[l.id] }))
-    .sort((a, b) => b.windowTotal - a.windowTotal || a.createdAt - b.createdAt);
+    .sort((a, b) => (b.windowTotal - a.windowTotal)
+      || ((a.reachedAt || a.createdAt) - (b.reachedAt || b.createdAt))
+      || String(a.id).localeCompare(String(b.id)));
 }
 const todayBoard = f => windowBoard(24, f);
-
-function minToTop(f = {}) { const t = allTime(f)[0]; return t ? t.total + RULES.TOP_STEP : RULES.MIN_BID; }
 function minToTopToday(f = {}) { const t = todayBoard(f)[0]; return t ? t.windowTotal + RULES.TOP_STEP : RULES.MIN_BID; }
+// Back-compat alias: pricing is always category-scoped now.
+function minToTop(f = {}) { return f.category ? minToTopCategory(f.category) : RULES.MIN_BID; }
+
+// Legacy helper: a flat list, used only for directory/search surfaces (not for pricing).
+function allTime(f = {}) {
+  return active().filter(l => !f.category || l.category === f.category).sort(cmp);
+}
 function rankOf(id, f = {}) { return allTime(f).findIndex(l => l.id === id) + 1; }
 
 // ---------- writes ----------
@@ -98,7 +157,8 @@ function createListing(d) {
     phone: String(d.phone || '').replace(/[^0-9+()\s-]/g, '').slice(0, 24),
     email: /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(String(d.email || '')) ? String(d.email).slice(0, 120) : '',
     verified: false, editorPick: false,                   // FIX: never settable by submitter
-    total: 0, raises: 0, clicks: 0, views: 0, active: true, createdAt: Date.now(), lastRaise: Date.now()
+    total: 0, raises: 0, clicks: 0, views: 0, active: true,
+    createdAt: Date.now(), lastRaise: Date.now(), reachedAt: Date.now()
   };
   db.listings.push(l); addBid(l.id, amount); return l;
 }
@@ -108,10 +168,14 @@ function addBid(listingId, amount) {
   if (!l) throw new Error('Listing not found.');
   if (l.total + amount > RULES.MAX_BID) throw new Error('That would exceed the maximum total.');
   db.bids.push({ id: uid(), listingId, amount, ts: Date.now(), day: dayKey() });
-  l.total += amount; l.raises++; l.lastRaise = Date.now(); save(); return l;
+  l.total += amount; l.raises++;
+  l.lastRaise = l.reachedAt = Date.now();   // timestamp the moment this total was reached
+  save(); return l;
 }
 function buyTakeover(listingId, amount) {
-  const need = Math.max(RULES.MIN_BID, (allTime()[0]?.total || 0) * RULES.TAKEOVER_MULTIPLE);
+  const l0 = db.listings.find(x => x.id === listingId);
+  const base = l0 ? categoryTop(l0.category) : 0;
+  const need = Math.max(RULES.MIN_BID, base * RULES.TAKEOVER_MULTIPLE);
   const amt = S.validAmount(amount, { min: RULES.MIN_BID, max: RULES.MAX_BID });
   if (amt < need) throw new Error(`A takeover costs at least $${need.toLocaleString('en-NZ')} (${RULES.TAKEOVER_MULTIPLE}× the current #1).`);
   addBid(listingId, amt);
@@ -188,5 +252,7 @@ const stats = () => ({
 });
 
 module.exports = { db, save, saveNow, FILE, RULES, CATEGORIES, CITIES, catName, allTime, todayBoard,
+  categoryBoard, categoryLeader, categoryTop, minToTopCategory, rankInCategory, categoryHistory,
+  categoryPrices, categoryLeaders, overallNo1, cmp,
   minToTop, minToTopToday, rankOf, createListing, addBid, buyTakeover, currentTakeover, track,
   addLead, leadsFor, recentActivity, visibilityScore, scoreBreakdown, aiSearch, stats, findByUrl, dayKey };
