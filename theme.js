@@ -59,6 +59,7 @@ h1,h2,h3{font-weight:400;margin:0;letter-spacing:-.005em}
 .sec-head h2{font-size:inherit;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:#fff;margin:0}
 .sec-head .k-meta{color:#c9d1cc;white-space:nowrap}
 .sec-lede{font-size:clamp(15.5px,1.12vw,19px);line-height:1.7;color:#f2f5f3;max-width:60ch;margin:0 0 var(--s3)}
+.sec-lede a{display:inline-flex;align-items:center;min-height:26px;padding:2px 0}
 .vermilion{color:var(--vermilion)}
 
 /* ---------- reveal ---------- */
@@ -216,6 +217,12 @@ label input,label select,label textarea{margin-top:8px}
 .cg-open .cg-amt{color:#7c8781}
 
 /* ---------- overall NZ champion ---------- */
+.nz-lab{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);
+  margin:var(--s4) 0 var(--s2);display:flex;align-items:center;gap:12px}
+.nz-lab:after{content:'';flex:1;height:1px;background:rgba(201,162,74,.28)}
+.t1-nz{border-color:rgba(201,162,74,.45);background:linear-gradient(150deg,#1a1408,#0a0e14)}
+.t1-nz .t1-num{color:var(--gold)}
+.t1-nz .t1-score i{background:var(--gold);box-shadow:0 0 12px rgba(201,162,74,.5)}
 .nz1{border:1px solid var(--line);background:linear-gradient(150deg,#1a1108,#0a0e14);margin-top:var(--s3)}
 .nz1-badge{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);
   padding:14px clamp(20px,2.4vw,30px);border-bottom:1px solid var(--line-soft)}
@@ -263,11 +270,11 @@ label input,label select,label textarea{margin-top:8px}
 .t1-badges{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
 .t1-badges .badge{margin-left:0}
 .t1-dl{margin:var(--s3) 0 0;display:grid;gap:0}
-.t1-dl > div{display:flex;justify-content:space-between;align-items:baseline;gap:14px;
-  padding:11px 0;border-bottom:1px solid var(--line-soft)}
+.t1-dl > div{display:flex;justify-content:space-between;align-items:center;gap:14px;
+  padding:11px 0;min-height:44px;border-bottom:1px solid var(--line-soft)}
 .t1-dl dt{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#c9d1cc;margin:0}
 .t1-dl dd{margin:0;font-size:14.5px;color:#fff;text-align:right;font-variant-numeric:tabular-nums}
-.t1-dl dd a{border-bottom:1px solid var(--line);display:inline-flex;align-items:center;min-height:26px;padding:2px 0}
+.t1-dl dd a{border-bottom:1px solid var(--line);display:inline-flex;align-items:center;min-height:28px;padding:4px 0}
 .t1-amt{font-size:22px!important;font-weight:300;letter-spacing:-.02em}
 .t1-claim{margin-top:auto;padding-top:var(--s3);align-self:start}
 .t1-ad{padding:clamp(22px,2.6vw,34px);display:flex;flex-direction:column;justify-content:center}

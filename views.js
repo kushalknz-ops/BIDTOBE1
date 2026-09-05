@@ -22,7 +22,7 @@ const ARROW = '<svg viewBox="0 0 13 13" fill="none"><path d="M2 11L11 2M11 2H4M1
 
 function layout(title, body, active = '', head = '', opts = {}) {
   const s = D.stats(), t = D.currentTakeover();
-  const nav = [['/', 'Categories', 'all'], ['/nz', 'Overall', 'nz'], ['/today', 'Today', 'today'],
+  const nav = [['/', 'Categories', 'all'], ['/nz', 'All NZ', 'nz'], ['/today', 'Today', 'today'],
     ['/ask', 'Ask', 'ask'], ['/rules', 'Rules', 'rules'], ['/about', 'About', 'about'],
     ['/dashboard', 'Dashboard', 'dash']];
   return `<!doctype html><html lang="en-NZ"><head><meta charset="utf-8">
@@ -109,30 +109,28 @@ function row(l, i, amount, claimFor, d = 0) {
   </div>`;
 }
 
-function boardTiers(list, amountOf, catSlug) {
-  if (!list.length) return '';
+function featuredCard(top, amount, catSlug, opts = {}) {
   const step = D.RULES.TOP_STEP;
-  const top = list[0], second = list.slice(1, 3), restTier = list.slice(3);
-  const lab = catSlug ? D.catName(catSlug) : 'New Zealand';
-
-  // ---- 01 — champion: business details | their advertisement ----
-  const champion = `<article class="t1" data-rv="up">
+  const lab = opts.national ? 'All over New Zealand' : (catSlug ? D.catName(catSlug) : 'New Zealand');
+  const price = catSlug ? D.minToTopCategory(catSlug) : amount + step;
+  return `<article class="t1${opts.national ? ' t1-nz' : ''}" data-rv="up">
     <div class="t1-info">
       <div class="t1-rank"><span class="t1-num">01</span><span class="t1-lab">${esc(lab)}</span></div>
       <a href="/business/${top.slug}"><h3 class="t1-name">${esc(top.name)}</h3></a>
       <div class="t1-badges">${badges(top)}</div>
       <dl class="t1-dl">
-        <div><dt>Committed</dt><dd class="t1-amt">${money(amountOf(top))}</dd></div>
-        <div><dt>Category</dt><dd><a href="/category/${top.category}">${esc(D.catName(top.category))}</a> · #${D.rankOf(top.id, { category: top.category })}</dd></div>
+        <div><dt>Bid</dt><dd class="t1-amt">${money(amount)}</dd></div>
+        <div><dt>Category</dt><dd><a href="/category/${top.category}">${esc(D.catName(top.category))}</a></dd></div>
+        ${opts.national ? `<div><dt>Reached</dt><dd>${new Date(top.reachedAt || top.createdAt).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</dd></div>` : ''}
         <div><dt>Operating</dt><dd>${esc(top.city)}</dd></div>
         <div><dt>Clicks sent</dt><dd>${top.clicks.toLocaleString()}</dd></div>
         ${top.phone ? `<div><dt>Phone</dt><dd>${esc(top.phone)}</dd></div>` : ''}
       </dl>
-      <a class="claim t1-claim" href="/raise/${top.id}">Take this rank → ${money(amountOf(top) + step)}</a>
+      <a class="claim t1-claim" href="/raise/${top.id}">Take this rank \u2192 ${money(price)}</a>
     </div>
     <div class="t1-ad">
       <span class="t1-adtag">Their message</span>
-      <p class="t1-pitch">${esc(top.tagline || top.name + ' holds the top rank on BIDTOBE1.')}</p>
+      <p class="t1-pitch">${esc(top.tagline || top.name + ' holds the top rank.')}</p>
       <div class="t1-actions">
         <a class="btn" href="/go/${top.id}" target="_blank" rel="nofollow noopener">Visit website ${ARROW}</a>
         <a class="btn ghost" href="/business/${top.slug}#enquiry">Request a quote</a>
@@ -140,8 +138,14 @@ function boardTiers(list, amountOf, catSlug) {
       <div class="t1-score"><span>Visibility ${D.visibilityScore(top)}/100</span><i style="width:${D.visibilityScore(top)}%"></i></div>
     </div>
   </article>`;
+}
 
-  // ---- 02 / 03 ----
+// Tiered board: 01 featured, 02/03 pair, 04+ compact rows. Any number of companies.
+function boardTiers(list, amountOf, catSlug) {
+  if (!list.length) return '';
+  const step = D.RULES.TOP_STEP;
+  const second = list.slice(1, 3), restTier = list.slice(3);
+
   const pair = second.length ? `<div class="t2">${second.map((l, i) => `<article class="t2-card" data-rv="up" data-d="${i * 2}">
       <div class="t2-head"><span class="t2-num">${String(i + 2).padStart(2, '0')}</span>
         <img class="t2-ico" src="${fav(l.url)}" alt="" loading="lazy"></div>
@@ -149,12 +153,11 @@ function boardTiers(list, amountOf, catSlug) {
       <p class="t2-pitch">${esc(l.tagline)}</p>
       <div class="t2-foot">
         <span class="t2-amt">${money(amountOf(l))}</span>
-        <span class="rmeta">${esc(D.catName(l.category))} · ${l.clicks.toLocaleString()} clicks</span>
-        <a class="claim" href="/raise/${l.id}">Take this rank → ${money(amountOf(l) + step)}</a>
+        <span class="rmeta">${esc(D.catName(l.category))} \u00b7 ${l.clicks.toLocaleString()} clicks</span>
+        <a class="claim" href="/raise/${l.id}">Take this rank \u2192 ${money(amountOf(l) + step)}</a>
       </div>
     </article>`).join('')}</div>` : '';
 
-  // ---- 04+ — slim rows ----
   const rows = restTier.length ? `<div class="t3">${restTier.map((l, i) => `<a class="t3-row" href="/business/${l.slug}" data-rv="up" data-d="${Math.min(i, 8)}">
       <span class="t3-num">${String(i + 4).padStart(2, '0')}</span>
       <img class="t3-ico" src="${fav(l.url)}" alt="" loading="lazy">
@@ -162,10 +165,10 @@ function boardTiers(list, amountOf, catSlug) {
       <span class="t3-pitch">${esc(l.tagline)}</span>
       <span class="t3-meta">${esc(D.catName(l.category))}</span>
       <span class="t3-amt">${money(amountOf(l))}</span>
-      <span class="t3-claim">${money(amountOf(l) + step)} →</span>
+      <span class="t3-claim">${money(amountOf(l) + step)} \u2192</span>
     </a>`).join('')}</div>` : '';
 
-  return champion + pair + rows;
+  return featuredCard(list[0], amountOf(list[0]), catSlug) + pair + rows;
 }
 
 function secHead(n, title, meta) {
@@ -314,62 +317,30 @@ function board(kind, f, extra = {}) {
 }
 
 function overallPage() {
-  const leaders = D.categoryLeaders();
-  const champ = leaders[0];
-  const prices = D.categoryPrices();
-  const empty = prices.filter(c => !c.count);
-  return layout('Overall New Zealand ranking · BIDTOBE1', `<div class="wrap" id="main">
+  const champ = D.categoryLeaders()[0];   // single highest bid across all categories
+  const active = D.categoryPrices().filter(c => c.count).length;
+  return layout('All over New Zealand · BIDTOBE1', `<div class="wrap" id="main">
     <div style="padding-top:var(--s5)">
-      <div class="eyebrow" data-rv="fade"><span class="dot"></span> Overall New Zealand ranking</div>
+      <div class="eyebrow" data-rv="fade"><span class="dot"></span> All over New Zealand</div>
       <h1 class="display h-page" style="margin-top:16px;max-width:15ch">${words('The highest bid in the country.')}</h1>
       <p class="body-lg" data-rv="up" data-d="2" style="max-width:56ch;margin-top:20px">
-        Every category runs its own independent auction. This page takes the current leader from each one,
-        compares them, and shows who holds the single highest bid in New Zealand. It is a read-only scoreboard \u2014
-        nothing here changes what a bid costs inside any category.</p>
+        Every category runs its own independent auction. This page compares the leading bid from each one
+        and shows the single highest in New Zealand. It is read-only \u2014 nothing here changes what a bid
+        costs inside any category.</p>
     </div>
 
-    ${champ ? `<article class="nz1" data-rv="up">
-      <div class="nz1-badge">Overall New Zealand #1</div>
-      <div class="nz1-body">
-        <img class="nz1-ico" src="${fav(champ.url)}" alt="" loading="lazy">
-        <div class="nz1-main">
-          <a href="/business/${champ.slug}"><h2 class="nz1-name">${esc(champ.name)}</h2></a>
-          <p class="nz1-pitch">${esc(champ.tagline)}</p>
-          <div class="nz1-meta">
-            <a href="/category/${champ.categorySlug}">${esc(champ.categoryName)}</a>
-            <span>Reached ${new Date(champ.reachedAt).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-            <span>${champ.clicks.toLocaleString()} clicks</span>
-          </div>
-        </div>
-        <div class="nz1-amt"><b>${money(champ.total)}</b><span>highest bid in New Zealand</span></div>
-      </div>
-      <div class="nz1-foot">To outrank ${esc(champ.name)} nationally you must first lead
-        <a href="/category/${champ.categorySlug}">${esc(champ.categoryName)}</a> \u2014 that category's own price is
-        <b>${money(D.minToTopCategory(champ.categorySlug))}</b>.</div>
-    </article>` : UI.empty({ icon: '\u25c7', title: 'No categories have a leader yet',
-        desc: 'As soon as one business claims a rank in any category, it appears here.',
+    ${champ ? `
+    <div class="nz-lab" data-rv="fade">#1 Overall New Zealand</div>
+    ${featuredCard(champ, champ.total, champ.categorySlug, { national: true })}
+    <p class="sec-lede" data-rv="fade" style="margin-top:var(--s3)">
+      ${esc(champ.name)} leads ${esc(champ.categoryName)} on ${money(champ.total)}, the highest bid of the
+      ${active} active ${active === 1 ? 'category' : 'categories'}. To take this spot you must first lead
+      <a class="vermilion" href="/category/${champ.categorySlug}">${esc(champ.categoryName)}</a>
+      \u2014 that category's own price is <b style="color:#fff;font-weight:400">${money(D.minToTopCategory(champ.categorySlug))}</b>,
+      and bidding there changes nothing in any other category.</p>`
+    : UI.empty({ icon: '\u25c7', title: 'No bids in any category yet',
+        desc: 'As soon as one business leads a category, it appears here as the national #1.',
         actions: '<a class="btn verm" href="/submit">Claim the first rank</a>' })}
-
-    ${secHead(2, 'Category leaders compared', leaders.length + ' of ' + prices.length + ' categories active')}
-    <p class="sec-lede" data-rv="fade">One entry per category \u2014 the business currently leading it. Equal bids are
-      settled by which was reached first, then by listing ID, so the order never shifts on its own.</p>
-    <div class="t3" data-rv="up" style="border-top:1px solid var(--line-soft)">
-      ${leaders.map((l, i) => `<a class="t3-row nz-row" href="/category/${l.categorySlug}">
-        <span class="t3-num">${String(i + 1).padStart(2, '0')}</span>
-        <img class="t3-ico" src="${fav(l.url)}" alt="" loading="lazy">
-        <span class="t3-name">${esc(l.name)}</span>
-        <span class="t3-pitch">${esc(l.categoryName)}</span>
-        <span class="t3-meta">${new Date(l.reachedAt).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}</span>
-        <span class="t3-amt">${money(l.total)}</span>
-        <span class="t3-claim">${money(D.minToTopCategory(l.categorySlug))} to lead \u2192</span>
-      </a>`).join('')}
-    </div>
-
-    ${empty.length ? `${secHead(3, 'Unclaimed categories', empty.length + ' open')}
-      <p class="sec-lede" data-rv="fade">No bids yet. Each of these starts at ${money(D.RULES.MIN_BID)} \u2014
-        independent of what any other category costs.</p>
-      <div class="chips" data-rv="fade">${empty.map(c =>
-        `<a class="chip" href="/category/${c.slug}">${esc(c.name)} \u00b7 ${money(c.priceToTop)}</a>`).join('')}</div>` : ''}
   </div>`, 'nz');
 }
 
