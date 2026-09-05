@@ -5,10 +5,10 @@
 exports.CSS = `
 /* ---------------- Field (label + control + description + error) ---------------- */
 .field{display:grid;gap:7px;margin-top:20px}
-.field-label{font-size:10px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+.field-label{font-size:10px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:#c9d1cc;
   display:flex;align-items:center;gap:8px;min-height:20px}
 .field-label .req{color:var(--vermilion);font-size:12px;line-height:1}
-.field-desc{font-size:12px;color:#6f7d88;line-height:1.5}
+.field-desc{font-size:12px;color:#d5dcd8;line-height:1.5}
 .field-error{font-size:12px;color:#ff9d95;display:none;align-items:center;gap:7px;line-height:1.5}
 .field-error:before{content:'';width:12px;height:12px;flex:none;border-radius:50%;
   background:var(--vermilion);
@@ -26,7 +26,7 @@ exports.CSS = `
 .input-group:focus-within{border-color:var(--bone-dim)}
 .input-group input{border:0;background:none}
 .input-group input:focus{outline:none}
-.input-group .addon{display:flex;align-items:center;padding:0 13px;font-size:13px;color:var(--muted);
+.input-group .addon{display:flex;align-items:center;padding:0 13px;font-size:13px;color:#dfe5e2;
   background:rgba(223,231,224,.03);white-space:nowrap}
 .input-group .addon.lead{border-right:1px solid var(--line-soft)}
 .input-group .addon.trail{border-left:1px solid var(--line-soft)}
@@ -35,9 +35,9 @@ exports.CSS = `
 .empty{display:flex;flex-direction:column;align-items:center;text-align:center;
   padding:clamp(34px,7vw,66px) clamp(20px,4vw,40px);border:1px dashed var(--line);background:rgba(10,14,18,.3)}
 .empty-media{width:52px;height:52px;display:grid;place-items:center;border:1px solid var(--line);
-  margin-bottom:20px;color:var(--muted);font-size:20px}
+  margin-bottom:20px;color:#dfe5e2;font-size:20px}
 .empty-title{font-size:16px;text-transform:uppercase;letter-spacing:-.005em;color:var(--bone)}
-.empty-desc{font-size:13.5px;color:var(--muted);max-width:44ch;margin-top:10px;line-height:1.65}
+.empty-desc{font-size:13.5px;color:#e6ebe8;max-width:44ch;margin-top:10px;line-height:1.65}
 .empty-actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;justify-content:center}
 
 /* ---------------- Alert ---------------- */
@@ -45,7 +45,7 @@ exports.CSS = `
   background:rgba(10,14,18,.5);align-items:start;margin:18px 0}
 .alert-ico{width:16px;height:16px;margin-top:1px}
 .alert-title{font-size:12px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--bone)}
-.alert-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-top:5px}
+.alert-desc{font-size:13px;color:#e6ebe8;line-height:1.6;margin-top:5px}
 .alert.destructive{border-color:rgba(224,35,28,.45);background:rgba(224,35,28,.06)}
 .alert.destructive .alert-title{color:#ffb3ae}
 .alert.success{border-color:rgba(61,220,151,.35);background:rgba(61,220,151,.05)}
@@ -66,8 +66,8 @@ exports.CSS = `
 .toast.success .toast-dot{background:#3ddc97;box-shadow:0 0 10px #3ddc97}
 .toast.error .toast-dot{background:var(--vermilion);box-shadow:0 0 10px var(--vermilion)}
 .toast-title{font-size:13px;color:var(--bone);line-height:1.45}
-.toast-desc{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
-.toast-x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;
+.toast-desc{font-size:12px;color:#e6ebe8;margin-top:4px;line-height:1.5}
+.toast-x{background:none;border:0;color:#c9d1cc;cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;
   min-height:24px;min-width:24px}
 .toast-x:hover{color:var(--bone)}
 @media (prefers-reduced-motion:reduce){.toast,.toast.out{animation:none}}
@@ -80,7 +80,7 @@ dialog.modal[open]{animation:dlg-in .34s cubic-bezier(.16,1,.3,1)}
 @keyframes dlg-in{from{opacity:0;transform:translate3d(0,12px,0) scale(.98)}to{opacity:1;transform:none}}
 .modal-panel{border:1px solid var(--line);background:#0b1017;padding:clamp(22px,3vw,30px)}
 .modal-title{font-size:clamp(18px,2.2vw,24px);text-transform:uppercase;letter-spacing:-.01em;line-height:1.2}
-.modal-desc{font-size:13.5px;color:var(--muted);margin-top:12px;line-height:1.65}
+.modal-desc{font-size:13.5px;color:#e6ebe8;margin-top:12px;line-height:1.65}
 .modal-body{margin-top:20px}
 .modal-actions{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
 .modal-actions .btn{flex:1;min-width:130px}
@@ -102,28 +102,28 @@ dialog.cmdk::backdrop{background:rgba(2,4,6,.82);backdrop-filter:blur(8px)}
 .cmd-input:focus{outline:none}
 .cmd-list{max-height:min(56vh,420px);overflow-y:auto;padding:8px;overscroll-behavior:contain}
 .cmd-group{padding:12px 10px 6px;font-size:9px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;
-  color:#5a6670}
-.cmd-item{display:flex;align-items:center;gap:12px;padding:11px 12px;cursor:pointer;color:var(--bone-dim);
+  color:#c9d1cc}
+.cmd-item{display:flex;align-items:center;gap:12px;padding:11px 12px;cursor:pointer;color:#eef1ef;
   font-size:13.5px;border:1px solid transparent;min-height:40px}
 .cmd-item[aria-selected="true"]{background:rgba(223,231,224,.05);border-color:var(--line-soft);color:var(--bone)}
 .cmd-item .ci-ico{width:18px;text-align:center;opacity:.6;flex:none;font-size:12px}
 .cmd-item .ci-main{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cmd-item .ci-meta{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);flex:none}
-.cmd-empty{padding:36px 16px;text-align:center;color:var(--muted);font-size:13px}
+.cmd-item .ci-meta{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#c9d1cc;flex:none}
+.cmd-empty{padding:36px 16px;text-align:center;color:#e6ebe8;font-size:13px}
 .cmd-foot{display:flex;gap:16px;padding:11px 16px;border-top:1px solid var(--line-soft);
-  font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5a6670;flex-wrap:wrap}
+  font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#c9d1cc;flex-wrap:wrap}
 .kbd{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 5px;
   border:1px solid var(--line);font-size:10px;color:var(--bone-dim);font-family:inherit;line-height:1}
 .cmd-trigger{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line-soft);
-  padding:8px 11px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+  padding:8px 11px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#d5dcd8;
   cursor:pointer;background:none;font-family:inherit;min-height:34px;transition:border-color .4s,color .4s}
-.cmd-trigger:hover{border-color:var(--line);color:var(--bone-dim)}
+.cmd-trigger:hover{border-color:var(--bone-dim);color:#fff}
 @media(max-width:900px){.cmd-trigger .ct-label{display:none}}
 
 /* ---------------- Tooltip ---------------- */
 .tip{position:relative;display:inline-flex;align-items:center;border-bottom:1px dotted rgba(223,231,224,.3);
   cursor:help}
-.tip:after{content:attr(data-tip);position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%) translateY(4px);
+.tip:after{content:attr(data-tip);color:#fff;position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%) translateY(4px);
   background:#141b24;border:1px solid var(--line);color:var(--bone);font-size:12px;letter-spacing:0;
   text-transform:none;font-weight:300;padding:9px 12px;width:max-content;max-width:min(280px,80vw);
   line-height:1.5;opacity:0;visibility:hidden;transition:opacity .22s,transform .22s;z-index:80;
@@ -144,14 +144,14 @@ dialog.cmdk::backdrop{background:rgba(2,4,6,.82);backdrop-filter:blur(8px)}
 
 /* ---------------- Breadcrumb ---------------- */
 .crumb{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:10px;font-weight:500;
-  letter-spacing:.2em;text-transform:uppercase;color:var(--muted);min-height:24px}
-.crumb a{color:var(--muted);transition:color .35s;display:inline-flex;align-items:center;min-height:24px}
+  letter-spacing:.2em;text-transform:uppercase;color:#c9d1cc;min-height:24px}
+.crumb a{color:#d5dcd8;transition:color .35s;display:inline-flex;align-items:center;min-height:24px}
 .crumb a:hover{color:var(--bone)}
 .crumb .sep{opacity:.4}
-.crumb [aria-current]{color:var(--bone-dim)}
+.crumb [aria-current]{color:#fff}
 
 /* ---------------- misc ---------------- */
-.copy-btn{background:none;border:1px solid var(--line-soft);color:var(--muted);cursor:pointer;
+.copy-btn{background:none;border:1px solid var(--line);color:#d5dcd8;cursor:pointer;
   font:inherit;font-size:9px;letter-spacing:.16em;text-transform:uppercase;padding:8px 11px;min-height:32px;
   display:inline-flex;align-items:center;gap:7px;transition:color .35s,border-color .35s}
 .copy-btn:hover{color:var(--bone);border-color:var(--line)}
