@@ -15,7 +15,7 @@ const DEVICES = [
   { name: 'Desktop wide',     w: 1920, h: 1080, m: false }
 ];
 const PAGES = ['/', '/today', '/rules', '/about', '/ask', '/submit', '/dashboard',
-  '/business/kushal-ai', '/category/ai-agents-automation', '/nz'];
+  '/business/kushal-ai', '/category/ai-agents-automation'];
 
 (async () => {
   const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'] });

@@ -29,7 +29,6 @@ const notFound = res => res.status(404).send(V.layout('Not found', '<div class="
 
 // boards
 app.get('/', (req, res) => res.send(V.board('all', f(req.query))));
-app.get('/nz', (_, res) => res.send(V.overallPage()));
 app.get('/today', (req, res) => res.send(V.board('today', f(req.query))));
 app.get('/daily', (_, res) => res.redirect(301, '/today'));      // board retired
 app.get('/momentum', (_, res) => res.redirect(301, '/'));        // board retired
@@ -59,13 +58,13 @@ app.get('/go/:id', S.rateLimit({ windowMs: 60000, max: 120, key: 'go' }), (req, 
 });
 
 // submit / raise / takeover  === PAYMENT HOOKS ===
-app.get('/submit', (req, res) => res.send(V.submit(null, { category: req.query.category || '' })));
+app.get('/submit', (_, res) => res.send(V.submit(null, {})));
 app.post('/submit', writeLimit, (req, res) => {
   try {
     const l = D.createListing(S.pick(req.body, ['name', 'url', 'tagline', 'category', 'city', 'phone', 'email', 'amount']));
     S.grantOwnership(req, res, l.id);                      // FIX: submitter owns the dashboard
     const rank = D.rankOf(l.id, { category: l.category });
-    res.redirect('/business/' + l.slug + '?flash=' + encodeURIComponent(`You are #${D.rankInCategory(l.id)} in ${D.catName(l.category)}`)
+    res.redirect('/business/' + l.slug + '?flash=' + encodeURIComponent(`You are #${rank} in ${D.catName(l.category)}, #${D.rankOf(l.id)} in New Zealand`)
       + '&flashDesc=' + encodeURIComponent('Your listing is live. Analytics are in your dashboard.'));
   }
   catch (e) { res.status(400).send(V.submit(e.message, req.body)); }
@@ -76,7 +75,7 @@ app.post('/raise/:id', writeLimit, (req, res) => {
   try {
     D.addBid(l.id, req.body.amount); S.grantOwnership(req, res, l.id);
     const rank = D.rankOf(l.id, { category: l.category });
-    res.redirect('/business/' + l.slug + '?flash=' + encodeURIComponent(`Raised \u2014 now #${D.rankInCategory(l.id)} in ${D.catName(l.category)}`)
+    res.redirect('/business/' + l.slug + '?flash=' + encodeURIComponent(`Raised \u2014 now #${rank} in ${D.catName(l.category)}, #${D.rankOf(l.id)} nationally`)
       + '&flashDesc=' + encodeURIComponent('Rank updates instantly. Anyone can outbid you.'));
   }
   catch (e) { res.status(400).send(V.raise(l, e.message)); }
@@ -102,10 +101,10 @@ app.post('/lead/:id', writeLimit, (req, res) => {
 // SEO / AI-citation surface
 app.get('/robots.txt', (_, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nSitemap: /sitemap.xml\n'));
 app.get('/llms.txt', (_, res) => res.type('text/plain').send(
-`# BIDTOBE1\nNew Zealand's public business leaderboard. Rank is determined by what a business pays; paid placement is disclosed.\nThe AI Visibility Score (0-100) blends spend (capped at 35), click-through, profile completeness, enquiries and verification.\n\n## Machine-readable data\n- /api/board?board=all|today&category=\n- /api/overall (category leaders compared; read-only)\n- /api/min-to-top?category=<slug> (independent price per category)\n- /api/ask?q=<plain english question>\n- /api/stats\n\n## Boards\n${D.CATEGORIES.map(c => '- /category/' + c.slug + ' (' + c.name + ')').join('\\n')}\n`));
+`# BIDTOBE1\nNew Zealand's public business leaderboard. Rank is determined by what a business pays; paid placement is disclosed.\nThe AI Visibility Score (0-100) blends spend (capped at 35), click-through, profile completeness, enquiries and verification.\n\n## Machine-readable data\n- /api/board?board=all|today&category=\n- /api/ask?q=<plain english question>\n- /api/stats\n\n## Boards\n${D.CATEGORIES.map(c => '- /category/' + c.slug + ' (' + c.name + ')').join('\\n')}\n`));
 app.get('/sitemap.xml', (_, res) => {
   const base = (req => '')(0) || (process.env.PUBLIC_URL || '');
-  const urls = ['/', '/nz', '/today', '/rules', '/about', '/ask', '/submit']
+  const urls = ['/', '/today', '/rules', '/about', '/ask', '/submit']
     .concat(D.CATEGORIES.map(c => '/category/' + c.slug))
     .concat(D.allTime().map(l => '/business/' + l.slug));
   res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.map(u => `<url><loc>${base}${u}</loc></url>`).join('')}</urlset>`);
@@ -131,20 +130,7 @@ app.get('/api/board', (req, res) => {
   res.json(list.map((l, i) => ({ rank: i + 1, name: l.name, url: l.url, category: D.catName(l.category), city: l.city,
     total: l.total, windowTotal: l.windowTotal, clicks: l.clicks, score: D.visibilityScore(l), slug: l.slug })));
 });
-app.get('/api/min-to-top', (req, res) => {
-  const cat = req.query.category;
-  if (cat) return res.json({ category: cat, priceToTop: D.minToTopCategory(cat), today: D.minToTopToday({ category: cat }) });
-  res.json({ categories: D.categoryPrices().map(c => ({ slug: c.slug, name: c.name, top: c.top, priceToTop: c.priceToTop })) });
-});
-// Read-only aggregate: each category's leader, compared.
-app.get('/api/overall', (_, res) => {
-  const leaders = D.categoryLeaders();
-  res.json({ number1: leaders[0] ? { name: leaders[0].name, amount: leaders[0].total,
-      category: leaders[0].categoryName, reachedAt: new Date(leaders[0].reachedAt).toISOString(),
-      slug: leaders[0].slug } : null,
-    leaders: leaders.map((l, i) => ({ rank: i + 1, name: l.name, amount: l.total,
-      category: l.categoryName, reachedAt: new Date(l.reachedAt).toISOString() })) });
-});
+app.get('/api/min-to-top', (req, res) => res.json({ allTime: D.minToTop(f(req.query)), today: D.minToTopToday(f(req.query)) }));
 app.get('/api/ask', (req, res) => res.json(D.aiSearch(req.query.q).map(l => ({ name: l.name, url: l.url, city: l.city, category: D.catName(l.category), score: D.visibilityScore(l) }))));
 app.get('/api/stats', (_, res) => res.json(D.stats()));
 

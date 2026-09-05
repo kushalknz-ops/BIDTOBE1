@@ -22,9 +22,8 @@ const ARROW = '<svg viewBox="0 0 13 13" fill="none"><path d="M2 11L11 2M11 2H4M1
 
 function layout(title, body, active = '', head = '', opts = {}) {
   const s = D.stats(), t = D.currentTakeover();
-  const nav = [['/', 'Categories', 'all'], ['/nz', 'Overall', 'nz'], ['/today', 'Today', 'today'],
-    ['/ask', 'Ask', 'ask'], ['/rules', 'Rules', 'rules'], ['/about', 'About', 'about'],
-    ['/dashboard', 'Dashboard', 'dash']];
+  const nav = [['/', 'Board', 'all'], ['/today', 'Today', 'today'], ['/ask', 'Ask', 'ask'],
+    ['/rules', 'Rules', 'rules'], ['/about', 'About', 'about'], ['/dashboard', 'Dashboard', 'dash']];
   return `<!doctype html><html lang="en-NZ"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)}</title>
@@ -109,16 +108,15 @@ function row(l, i, amount, claimFor, d = 0) {
   </div>`;
 }
 
-function boardTiers(list, amountOf, catSlug) {
+function boardTiers(list, amountOf) {
   if (!list.length) return '';
   const step = D.RULES.TOP_STEP;
   const top = list[0], second = list.slice(1, 3), restTier = list.slice(3);
-  const lab = catSlug ? D.catName(catSlug) : 'New Zealand';
 
   // ---- 01 — champion: business details | their advertisement ----
   const champion = `<article class="t1" data-rv="up">
     <div class="t1-info">
-      <div class="t1-rank"><span class="t1-num">01</span><span class="t1-lab">${esc(lab)}</span></div>
+      <div class="t1-rank"><span class="t1-num">01</span><span class="t1-lab">New Zealand</span></div>
       <a href="/business/${top.slug}"><h3 class="t1-name">${esc(top.name)}</h3></a>
       <div class="t1-badges">${badges(top)}</div>
       <dl class="t1-dl">
@@ -180,16 +178,15 @@ function filterBar(base, f) {
 }
 
 function claimBox(f) {
-  const cat = f.category || D.CATEGORIES[0].slug;
-  const need = D.minToTopCategory(cat);
+  const need = D.minToTop(f);
   return `<div class="claimbox" data-rv="up" data-d="3">
-    <div class="eyebrow"><span class="dot"></span> Claim #1 in ${esc(D.catName(cat))}</div>
+    <div class="eyebrow"><span class="dot"></span> Claim #1${f.category ? ' in ' + esc(D.catName(f.category)) : ' in New Zealand'}</div>
     <div class="price">${money(need)}</div>
-    <div class="k" style="color:#c9d1cc">Minimum to lead this category</div>
+    <div class="k" style="color:#c9d1cc">Minimum to take ${f.category ? 'the top spot in ' + esc(D.catName(f.category)) : '#1 nationally'}</div>
     <form class="claimform" method="post" action="/submit">
       <input name="url" placeholder="yourbusiness.co.nz" required>
       <input name="name" placeholder="Business name" required>
-      <select name="category" aria-label="Category" onchange="location.href='/?category='+this.value">${D.CATEGORIES.map(c => `<option value="${c.slug}" ${cat === c.slug ? 'selected' : ''}>${esc(c.name)} \u2014 ${money(D.minToTopCategory(c.slug))}</option>`).join('')}</select>
+      <select name="category" aria-label="Category">${D.CATEGORIES.map(c => `<option value="${c.slug}" ${f.category === c.slug ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>
       <div class="two">
         <input name="amount" type="number" min="${D.RULES.MIN_BID}" value="${need}" aria-label="Amount in NZD">
         <button class="btn verm" style="justify-content:center">Claim rank</button>
@@ -199,37 +196,16 @@ function claimBox(f) {
   </div>`;
 }
 
-function categoryGrid() {
-  const prices = D.categoryPrices();
-  const live = prices.filter(c => c.count), open = prices.filter(c => !c.count);
-  return `<div class="catgrid" data-rv="up">
-    ${live.map(c => `<a class="cg" href="/category/${c.slug}">
-      <div class="cg-top"><span class="cg-name">${esc(c.name)}</span><span class="cg-n">${c.count}</span></div>
-      <div class="cg-leader"><img class="cg-ico" src="${fav(c.leader.url)}" alt="" loading="lazy">
-        <span>${esc(c.leader.name)}</span></div>
-      <div class="cg-foot"><span class="cg-amt">${money(c.top)}</span>
-        <span class="cg-price">Take #1 \u00b7 ${money(c.priceToTop)}</span></div>
-    </a>`).join('')}
-    ${open.map(c => `<a class="cg cg-open" href="/category/${c.slug}">
-      <div class="cg-top"><span class="cg-name">${esc(c.name)}</span></div>
-      <div class="cg-leader cg-none">Unclaimed</div>
-      <div class="cg-foot"><span class="cg-amt">\u2014</span><span class="cg-price">Take #1 \u00b7 ${money(c.priceToTop)}</span></div>
-    </a>`).join('')}
-  </div>`;
-}
-
 function heroProof(list, amt) {
   const s = D.stats();
-  const leaders = D.categoryLeaders().slice(0, 3);
-  if (!leaders.length) return '';
+  if (!list.length) return '';
   return `<div class="hero-proof" data-rv="up" data-d="6">
-    <div class="hp-lab">Leading each category</div>
     <div class="hp-rows">
-      ${leaders.map((l, i) => `<a class="hp-row" href="/category/${l.categorySlug}">
+      ${list.slice(0, 3).map((l, i) => `<a class="hp-row" href="/business/${l.slug}">
         <span class="hp-rk">${String(i + 1).padStart(2, '0')}</span>
         <img class="hp-ico" src="${fav(l.url)}" alt="" loading="lazy">
         <span class="hp-name">${esc(l.name)}</span>
-        <span class="hp-amt">${money(l.total)}</span></a>`).join('')}
+        <span class="hp-amt">${money(amt(l))}</span></a>`).join('')}
     </div>
     <div class="hp-stats">
       <div><b>${s.listings}</b><span>businesses</span></div>
@@ -255,7 +231,7 @@ function board(kind, f, extra = {}) {
     all: { list: D.allTime(f), amt: l => l.total,
       title: f.category ? D.catName(f.category) : 'All-time', n: 1,
       lede: "New Zealand's public board", head: ['One more bid.', 'Be #1.'],
-      intro: 'Pick your category and outbid the business above you. Every category is its own auction with its own price \u2014 leading Trades costs nothing like leading AI. Win yours, then see where it puts you nationally.',
+      intro: 'Every business here has paid to stand where it stands. Nothing is editorial, nothing is an algorithm. Bid to sit above every other business in New Zealand \u2014 and know that anyone can take it back from you at any moment.',
       blurb: f.category
         ? `Ranked by everything committed in ${D.catName(f.category)}. Every listing also holds a place on the national board.`
         : 'Everything a business has ever committed, across all of New Zealand. It never expires.' },
@@ -293,16 +269,18 @@ function board(kind, f, extra = {}) {
     ${secHead(cfg.n, cfg.title, cfg.list.length + ' listed')}
     <p class="sec-lede" data-rv="fade">${esc(cfg.blurb)}</p>
 
-    ${kind === 'all' && !f.category ? categoryGrid() : (cfg.list.length ? boardTiers(cfg.list, cfg.amt, f.category)
+    ${cfg.list.length ? boardTiers(cfg.list, cfg.amt)
       : UI.empty({ icon: '\u25c7', title: 'This board is empty',
-          desc: `Nobody has claimed a rank here yet. The first listing takes #1 for ${money(D.RULES.MIN_BID)}.`,
-          actions: `<a class="btn verm" href="/submit">Take #1 for ${money(D.RULES.MIN_BID)}</a><a class="btn ghost" href="/rules">How it works</a>` }))}
+          desc: `Nobody has claimed a rank here yet. The first listing takes #1 for ${money(D.RULES.MIN_BID)} \u2014 and holds it until someone pays more.`,
+          actions: `<a class="btn verm" href="/submit">Take #1 for ${money(D.RULES.MIN_BID)}</a><a class="btn ghost" href="/rules">How it works</a>` })}
 
     <div class="board-aside">
       ${activityFeed()}
+      <div class="panel catlist" data-rv="up"><div class="eyebrow" style="margin-bottom:14px"><span class="dot"></span> Category boards</div>
+        ${D.CATEGORIES.map(c => `<a href="/category/${c.slug}">${esc(c.name)} <i>${D.allTime({ category: c.slug }).length}</i></a>`).join('')}</div>
       <div class="panel" data-rv="up"><div class="eyebrow" style="margin-bottom:14px"><span class="dot"></span> Homepage takeover</div>
-        <p class="body">Pay ${D.RULES.TAKEOVER_MULTIPLE}\u00d7 the current #1 of your category and own the banner across every page for ${D.RULES.TAKEOVER_HOURS} hours.</p>
-        <a class="claim" style="display:inline-block;margin-top:14px" href="/takeover">Buy a takeover \u2192</a></div>
+        <p class="body">Pay ${D.RULES.TAKEOVER_MULTIPLE}× the current #1 and own the banner across every page for ${D.RULES.TAKEOVER_HOURS} hours.</p>
+        <a class="claim" style="display:inline-block;margin-top:14px" href="/takeover">From ${money(Math.max(D.RULES.MIN_BID, (D.allTime()[0]?.total || 0) * D.RULES.TAKEOVER_MULTIPLE))} →</a></div>
     </div>
   </div>`, kind, jsonld({
     '@context': 'https://schema.org', '@type': 'ItemList', name: cfg.title, description: cfg.blurb,
@@ -313,121 +291,28 @@ function board(kind, f, extra = {}) {
   }));
 }
 
-function overallPage() {
-  const leaders = D.categoryLeaders();
-  const champ = leaders[0];
-  const prices = D.categoryPrices();
-  const empty = prices.filter(c => !c.count);
-  return layout('Overall New Zealand ranking · BIDTOBE1', `<div class="wrap" id="main">
-    <div style="padding-top:var(--s5)">
-      <div class="eyebrow" data-rv="fade"><span class="dot"></span> Overall New Zealand ranking</div>
-      <h1 class="display h-page" style="margin-top:16px;max-width:15ch">${words('The highest bid in the country.')}</h1>
-      <p class="body-lg" data-rv="up" data-d="2" style="max-width:56ch;margin-top:20px">
-        Every category runs its own independent auction. This page takes the current leader from each one,
-        compares them, and shows who holds the single highest bid in New Zealand. It is a read-only scoreboard \u2014
-        nothing here changes what a bid costs inside any category.</p>
-    </div>
-
-    ${champ ? `<article class="nz1" data-rv="up">
-      <div class="nz1-badge">Overall New Zealand #1</div>
-      <div class="nz1-body">
-        <img class="nz1-ico" src="${fav(champ.url)}" alt="" loading="lazy">
-        <div class="nz1-main">
-          <a href="/business/${champ.slug}"><h2 class="nz1-name">${esc(champ.name)}</h2></a>
-          <p class="nz1-pitch">${esc(champ.tagline)}</p>
-          <div class="nz1-meta">
-            <a href="/category/${champ.categorySlug}">${esc(champ.categoryName)}</a>
-            <span>Reached ${new Date(champ.reachedAt).toLocaleString('en-NZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-            <span>${champ.clicks.toLocaleString()} clicks</span>
-          </div>
-        </div>
-        <div class="nz1-amt"><b>${money(champ.total)}</b><span>highest bid in New Zealand</span></div>
-      </div>
-      <div class="nz1-foot">To outrank ${esc(champ.name)} nationally you must first lead
-        <a href="/category/${champ.categorySlug}">${esc(champ.categoryName)}</a> \u2014 that category's own price is
-        <b>${money(D.minToTopCategory(champ.categorySlug))}</b>.</div>
-    </article>` : UI.empty({ icon: '\u25c7', title: 'No categories have a leader yet',
-        desc: 'As soon as one business claims a rank in any category, it appears here.',
-        actions: '<a class="btn verm" href="/submit">Claim the first rank</a>' })}
-
-    ${secHead(2, 'Category leaders compared', leaders.length + ' of ' + prices.length + ' categories active')}
-    <p class="sec-lede" data-rv="fade">One entry per category \u2014 the business currently leading it. Equal bids are
-      settled by which was reached first, then by listing ID, so the order never shifts on its own.</p>
-    <div class="t3" data-rv="up" style="border-top:1px solid var(--line-soft)">
-      ${leaders.map((l, i) => `<a class="t3-row nz-row" href="/category/${l.categorySlug}">
-        <span class="t3-num">${String(i + 1).padStart(2, '0')}</span>
-        <img class="t3-ico" src="${fav(l.url)}" alt="" loading="lazy">
-        <span class="t3-name">${esc(l.name)}</span>
-        <span class="t3-pitch">${esc(l.categoryName)}</span>
-        <span class="t3-meta">${new Date(l.reachedAt).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}</span>
-        <span class="t3-amt">${money(l.total)}</span>
-        <span class="t3-claim">${money(D.minToTopCategory(l.categorySlug))} to lead \u2192</span>
-      </a>`).join('')}
-    </div>
-
-    ${empty.length ? `${secHead(3, 'Unclaimed categories', empty.length + ' open')}
-      <p class="sec-lede" data-rv="fade">No bids yet. Each of these starts at ${money(D.RULES.MIN_BID)} \u2014
-        independent of what any other category costs.</p>
-      <div class="chips" data-rv="fade">${empty.map(c =>
-        `<a class="chip" href="/category/${c.slug}">${esc(c.name)} \u00b7 ${money(c.priceToTop)}</a>`).join('')}</div>` : ''}
-  </div>`, 'nz');
-}
-
 function categoryPage(cat, f) {
-  const list = D.categoryBoard(cat.slug);
-  const price = D.minToTopCategory(cat.slug);
-  const leader = list[0];
-  const history = D.categoryHistory(cat.slug, 8);
-  const others = D.categoryPrices().filter(c => c.slug !== cat.slug && c.count).slice(0, 6);
-  return layout(cat.name + ' \u00b7 BIDTOBE1', `<div class="wrap" id="main">
+  const fl = { category: cat.slug };
+  const list = D.allTime(fl);
+  return layout(cat.name + ' · BIDTOBE1', `<div class="wrap" id="main">
     <div style="padding-top:var(--s5)">
       <div data-rv="fade">${UI.crumb([{ label: 'Board', href: '/' }, { label: cat.name }])}</div>
-      <h1 class="display h-page" style="margin-top:16px;max-width:16ch">${words(cat.name)}</h1>
-      <div class="cat-bar" data-rv="up" data-d="2">
-        <div><span>Leading bid</span><b>${leader ? money(leader.total) : '\u2014'}</b></div>
-        <div><span>To take #1 here</span><b class="vermilion">${money(price)}</b></div>
-        <div><span>Businesses</span><b>${list.length}</b></div>
-      </div>
-      <p class="body-lg" data-rv="up" data-d="3" style="max-width:56ch;margin-top:var(--s3)">
-        This category runs its own auction. ${leader
-          ? `${esc(leader.name)} leads on ${money(leader.total)}, so #1 here costs ${money(price)}.`
-          : `Nobody has bid yet, so #1 starts at ${money(D.RULES.MIN_BID)}.`}
-        What businesses pay in other categories has no effect on this price.</p>
-      <div class="hero-cta" data-rv="up" data-d="4">
-        <a class="btn verm" href="/submit?category=${cat.slug}">Bid in this category ${ARROW}</a>
-        <a class="arrowlink" href="/nz">See the national #1 <span class="ar">${ARROW}</span></a>
-      </div>
-    </div>
+      <h1 class="display h-page" style="margin-top:20px;max-width:16ch">${words('Best ' + cat.name + ' in New Zealand')}</h1>
+      <p class="body-lg" data-rv="up" data-d="2" style="max-width:50ch;margin-top:22px">
+        ${list.length} listed, ranked by what each business has committed. To take #1 on this board: <span class="vermilion">${money(D.minToTop(fl))}</span>.</p>
 
-    ${secHead(1, cat.name + ' ranking', list.length + ' listed')}
-    ${list.length ? boardTiers(list, l => l.total, cat.slug)
-      : UI.empty({ icon: '\u25c7', title: 'This category is unclaimed',
-          desc: `No business has bid in ${esc(cat.name)} yet. The first listing takes #1 for ${money(D.RULES.MIN_BID)} and holds it until someone bids higher \u2014 in this category only.`,
-          actions: `<a class="btn verm" href="/submit?category=${cat.slug}">Take #1 for ${money(D.RULES.MIN_BID)}</a>` })}
-
-    <div class="board-aside">
-      ${history.length ? `<div class="panel feed" data-rv="up">
-        <div class="eyebrow" style="margin-bottom:16px"><span class="dot"></span> Bidding history \u00b7 ${esc(cat.name)}</div>
-        ${history.map(h => `<a href="/business/${h.listing.slug}">
-          <img class="ico" style="width:24px;height:24px" src="${fav(h.listing.url)}" alt="" loading="lazy">
-          <span class="grow"><span class="fn">${esc(h.listing.name)}</span>
-          <span class="fm" style="display:block">+${money(h.amount)} \u00b7 ${ago(h.ts)}</span></span></a>`).join('')}
-      </div>` : ''}
-      <div class="panel catlist" data-rv="up">
-        <div class="eyebrow" style="margin-bottom:14px"><span class="dot"></span> Other category prices</div>
-        ${others.map(c => `<a href="/category/${c.slug}">${esc(c.name)} <i>${money(c.priceToTop)}</i></a>`).join('')}
-        <p class="field-desc" style="margin-top:14px">Each price is independent. Bidding here never changes these.</p>
-      </div>
     </div>
+    ${secHead(1, cat.name, null)}
+    ${list.length ? boardTiers(list, l => l.total)
+      : UI.empty({ icon: '\u25c7', title: 'Nobody holds this category',
+          desc: `${esc(cat.name)} is completely unclaimed nationwide. Whoever lists first takes #1.`,
+          actions: `<a class="btn verm" href="/submit">Claim #1 for ${money(D.RULES.MIN_BID)}</a>` })}
   </div>`);
 }
 
 function profile(l) {
-  const inCat = D.rankInCategory(l.id);
-  const catCount = D.categoryBoard(l.category).length;
-  const leaders = D.categoryLeaders();
-  const natPos = leaders.findIndex(x => x.id === l.id) + 1;   // only category leaders rank nationally
-  const overall = D.rankOf(l.id), total = D.allTime().length;
+  const overall = D.rankOf(l.id), inCat = D.rankOf(l.id, { category: l.category });
+  const catCount = D.allTime({ category: l.category }).length, total = D.allTime().length;
   const also = D.allTime({ category: l.category }).filter(x => x.id !== l.id).slice(0, 5);
   const onToday = D.todayBoard().some(x => x.id === l.id);
   return layout(`${l.name} · #${overall} on BIDTOBE1`, `<div class="wrap" id="main">
@@ -449,7 +334,7 @@ function profile(l) {
     </div>
     <div class="stats" data-rv="up">
       <div class="stat"><span>Category rank</span><b>#${String(inCat).padStart(2, '0')}</b><span style="margin-top:6px">of ${catCount} in ${esc(D.catName(l.category))}</span></div>
-      <div class="stat"><span>Overall New Zealand</span><b>${natPos ? '#' + String(natPos).padStart(2, '0') : '\u2014'}</b><span style="margin-top:6px">${natPos ? 'of ' + leaders.length + ' category leaders' : 'lead your category to enter'}</span></div>
+      <div class="stat"><span>New Zealand rank</span><b>#${String(overall).padStart(2, '0')}</b><span style="margin-top:6px">of ${total} nationally</span></div>
       <div class="stat"><span>Committed</span><b>${money(l.total)}</b><span style="margin-top:6px">raised ${l.raises} time${l.raises === 1 ? '' : 's'}</span></div>
       <div class="stat"><span>${UI.tip('AI visibility', 'Blends rank spend (capped at 35), click-through, profile completeness, enquiries and verification. Money alone cannot buy 100.')}</span><b>${D.visibilityScore(l)}</b><span style="margin-top:6px">out of 100</span></div>
     </div>
@@ -461,7 +346,7 @@ function profile(l) {
         <div class="q"><h3>Have they ranked today?</h3>
           <p class="body">${onToday ? 'Yes — they have added spend in the last twenty-four hours and appear on <a class="vermilion" href="/today">today\'s board</a>.' : 'No spend in the last twenty-four hours, so they are not on today\'s board.'}</p></div>
         <div class="q"><h3>How do I outrank them?</h3>
-          <p class="body">Anyone can take this rank for <span class="vermilion">${money(D.minToTopCategory(l.category))}</span> in ${esc(D.catName(l.category))}. That price is set by this category alone. <a class="claim" href="/raise/${l.id}">Do it →</a></p></div>
+          <p class="body">Anyone can take this rank for <span class="vermilion">${money(l.total + D.RULES.TOP_STEP)}</span> on the ${esc(D.catName(l.category))} board. <a class="claim" href="/raise/${l.id}">Do it →</a></p></div>
         <div class="q"><h3>Is this an editorial recommendation?</h3>
           <p class="body">No. Rank is paid placement. The AI Visibility Score and the Verified badge are the parts that are never for sale.</p></div>
 
@@ -564,13 +449,12 @@ function submit(err, v = {}) {
 }
 
 function raise(l, err) {
-  const needCat = D.minToTopCategory(l.category);
-  const catRank = D.rankInCategory(l.id);
+  const needTop = D.minToTop(), needCat = D.minToTop({ category: l.category });
   return layout('Raise ' + l.name, `<div class="wrap" id="main">
     <div style="padding-top:var(--s5)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> Raise a listing</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:16ch">${words(l.name)}</h1>
-      <p class="body-lg" data-rv="up" data-d="2" style="margin-top:20px">Currently ${money(l.total)}, ranked #${catRank} in ${esc(D.catName(l.category))}. You pay only the difference, and only this category's price applies.</p>
+      <p class="body-lg" data-rv="up" data-d="2" style="margin-top:20px">Currently ${money(l.total)}, sitting at #${D.rankOf(l.id)}. You pay only the difference.</p>
     </div>
     ${err ? UI.alert('destructive', 'Could not raise', esc(err)) : ''}
     <form class="panel" method="post" action="/raise/${l.id}" style="margin-top:34px;max-width:520px" data-rv="up" novalidate
@@ -579,10 +463,10 @@ function raise(l, err) {
           data-confirm-label="You add" data-confirm-ok="Pay and climb">
       ${UI.field({ label: 'Add amount', name: 'amount', type: 'number', prefix: 'NZ$', inputmode: 'numeric',
         value: Math.max(D.RULES.RAISE_STEP, needCat - l.total), min: D.RULES.RAISE_STEP, max: D.RULES.MAX_BID, required: true,
-        desc: `Current total ${money(l.total)}. #1 in ${esc(D.catName(l.category))} costs ${money(needCat)}.` })}
+        desc: `Current total ${money(l.total)}. You only pay the difference.` })}
       <ul class="list" style="margin-top:22px">
         <li><span><b style="color:var(--bone);font-weight:400">+${money(Math.max(1, needCat - l.total))}</b> takes #1 in ${esc(D.catName(l.category))}</span></li>
-        <li><span>Leading your category also enters you in the <a class="vermilion" href="/nz">Overall New Zealand ranking</a>.</span></li>
+        <li><span><b style="color:var(--bone);font-weight:400">+${money(Math.max(1, needTop - l.total))}</b> takes #1 overall</span></li>
       </ul>
       <button class="btn verm" style="margin-top:26px" data-loading-text="Processing">Pay and climb ${ARROW}</button>
     </form>
@@ -627,16 +511,15 @@ function rules() {
     ${secHead(1, 'The boards', null)}
     <p class="body-lg" data-rv="fade" style="max-width:54ch;margin-top:-14px">One payment ranks you on every board that includes that spend. The boards simply look at different windows of time.</p>
     <ul class="list" data-rv="up" style="margin-top:26px">
-      <li><span><b style="color:var(--bone);font-weight:400">Each category is its own auction.</b> It keeps its own leading bid, its own bidding history, its own ranking and its own price to reach #1. Bidding in one category never changes the price in another. Leading Trades &amp; Construction might cost ${money(D.minToTopCategory('trades-construction'))} while leading AI Agents &amp; Automation costs ${money(D.minToTopCategory('ai-agents-automation'))} — you only ever pay against the category you choose.</span></li>
-      <li><span><b style="color:var(--bone);font-weight:400">Overall New Zealand</b> — a read-only scoreboard. It takes the current leader of every category, compares those bids, and shows the single highest as national #1. It never sets a price and never moves money between categories.</span></li>
-      <li><span><b style="color:var(--bone);font-weight:400">Ties</b> — if two category leaders hold the same amount, the one who reached it first ranks higher. If the amount and the timestamp are identical, listing ID decides, so the order is always the same.</span></li>
-      <li><span><b style="color:var(--bone);font-weight:400">Today</b> — a rolling twenty-four hours across all categories. Each payment counts from the moment you pay, then drops off a day later.</span></li>
-      <li><span><b style="color:var(--bone);font-weight:400">Location</b> — the city on your listing is profile information for buyers. It does not affect rank.</span></li>
+      <li><span><b style="color:var(--bone);font-weight:400">All-time</b> — the main board. Rank is everything you have ever paid for that listing, measured against every business in New Zealand. It does not expire.</span></li>
+      <li><span><b style="color:var(--bone);font-weight:400">Today</b> — a rolling twenty-four hours. Each payment counts from the moment you pay, then drops off a day later.</span></li>
+      <li><span><b style="color:var(--bone);font-weight:400">Category</b> — one payment ranks you twice: nationally, and inside your trade. A smaller budget can still take #1 in a category while sitting mid-table nationally.</span></li>
+      <li><span><b style="color:var(--bone);font-weight:400">Location</b> — the city on your listing is profile information for buyers. It does not affect your rank; every business competes on one national board.</span></li>
     </ul>
     ${secHead(2, 'How ranking works', null)}
     <ul class="list" data-rv="up">
       <li>New listings are whole New Zealand dollars — ${money(R.MIN_BID)} minimum, ${money(R.MAX_BID)} maximum.</li>
-      <li>Taking #1 costs at least ${money(R.TOP_STEP)} more than the current leader <b style="color:var(--bone);font-weight:400">of that category</b>. Paying less still puts you on the category board at whatever rank that amount can take.</li>
+      <li>Taking #1 costs at least ${money(R.TOP_STEP)} more than the current #1. Paying less still puts you on the board at whatever rank that amount can take.</li>
       <li>Equal amounts stay in the order they were placed — the older listing keeps the higher rank.</li>
       <li>Already on the board? Enter the same website again to raise. The new amount must be at least ${money(R.RAISE_STEP)} above your current total, and checkout charges only the difference. Someone else cannot take your rank by paying that difference.</li>
       <li>Listings are keyed by website, with tracking query strings ignored, so one business cannot occupy two ranks.</li>
@@ -792,4 +675,4 @@ function dashboard(l, owned = []) {
   </div>`, 'dash', '', { noIndex: true });
 }
 
-module.exports = { setNonce, jsonld, layout, board, overallPage, categoryPage, profile, submit, raise, takeover, rules, about, ask, dashboard, esc, money };
+module.exports = { setNonce, jsonld, layout, board, categoryPage, profile, submit, raise, takeover, rules, about, ask, dashboard, esc, money };
