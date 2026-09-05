@@ -22,7 +22,7 @@ app.use(express.static(require('path').join(__dirname, 'public'), {
 }));
 app.use((req, res, next) => { if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/go')) { D.db.visitors++; } next(); });
 
-const f = q => ({ category: q.category || '', city: q.city || '' });
+const f = q => ({ category: q.category || '' });   // city is not a ranking dimension
 const bySlug = s => D.db.listings.find(x => x.slug === s);
 const byId = i => D.db.listings.find(x => x.id === i);
 const notFound = res => res.status(404).send(V.layout('Not found', '<div class="wrap"><h1>Not found</h1><p class="sub"><a href="/">Back to the leaderboard</a></p></div>'));
@@ -30,8 +30,8 @@ const notFound = res => res.status(404).send(V.layout('Not found', '<div class="
 // boards
 app.get('/', (req, res) => res.send(V.board('all', f(req.query))));
 app.get('/today', (req, res) => res.send(V.board('today', f(req.query))));
-app.get('/daily', (req, res) => res.send(V.board('daily', f(req.query), { day: req.query.day })));
-app.get('/momentum', (req, res) => res.send(V.board('momentum', f(req.query))));
+app.get('/daily', (_, res) => res.redirect(301, '/today'));      // board retired
+app.get('/momentum', (_, res) => res.redirect(301, '/'));        // board retired
 
 app.get('/category/:slug', (req, res) => {
   const cat = D.CATEGORIES.find(c => c.slug === req.params.slug);
@@ -63,8 +63,8 @@ app.post('/submit', writeLimit, (req, res) => {
   try {
     const l = D.createListing(S.pick(req.body, ['name', 'url', 'tagline', 'category', 'city', 'phone', 'email', 'amount']));
     S.grantOwnership(req, res, l.id);                      // FIX: submitter owns the dashboard
-    const rank = D.rankOf(l.id, { category: l.category, city: l.city });
-    res.redirect('/business/' + l.slug + '?flash=' + encodeURIComponent(`You are #${rank} in ${D.catName(l.category)} \u00b7 ${l.city}`)
+    const rank = D.rankOf(l.id, { category: l.category });
+    res.redirect('/business/' + l.slug + '?flash=' + encodeURIComponent(`You are #${rank} in ${D.catName(l.category)}, #${D.rankOf(l.id)} in New Zealand`)
       + '&flashDesc=' + encodeURIComponent('Your listing is live. Analytics are in your dashboard.'));
   }
   catch (e) { res.status(400).send(V.submit(e.message, req.body)); }
@@ -74,8 +74,8 @@ app.post('/raise/:id', writeLimit, (req, res) => {
   const l = byId(req.params.id); if (!l) return notFound(res);
   try {
     D.addBid(l.id, req.body.amount); S.grantOwnership(req, res, l.id);
-    const rank = D.rankOf(l.id, { category: l.category, city: l.city });
-    res.redirect('/business/' + l.slug + '?flash=' + encodeURIComponent(`Raised \u2014 now #${rank} in ${D.catName(l.category)}`)
+    const rank = D.rankOf(l.id, { category: l.category });
+    res.redirect('/business/' + l.slug + '?flash=' + encodeURIComponent(`Raised \u2014 now #${rank} in ${D.catName(l.category)}, #${D.rankOf(l.id)} nationally`)
       + '&flashDesc=' + encodeURIComponent('Rank updates instantly. Anyone can outbid you.'));
   }
   catch (e) { res.status(400).send(V.raise(l, e.message)); }
@@ -101,10 +101,10 @@ app.post('/lead/:id', writeLimit, (req, res) => {
 // SEO / AI-citation surface
 app.get('/robots.txt', (_, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nSitemap: /sitemap.xml\n'));
 app.get('/llms.txt', (_, res) => res.type('text/plain').send(
-`# BIDTOBE1\nNew Zealand's public business leaderboard. Rank is determined by what a business pays; paid placement is disclosed.\nThe AI Visibility Score (0-100) blends spend (capped at 35), click-through, profile completeness, enquiries and verification.\n\n## Machine-readable data\n- /api/board?board=all|today|momentum&city=&category=\n- /api/ask?q=<plain english question>\n- /api/stats\n\n## Boards\n${D.CATEGORIES.map(c => '- /category/' + c.slug + ' (' + c.name + ')').join('\\n')}\n`));
+`# BIDTOBE1\nNew Zealand's public business leaderboard. Rank is determined by what a business pays; paid placement is disclosed.\nThe AI Visibility Score (0-100) blends spend (capped at 35), click-through, profile completeness, enquiries and verification.\n\n## Machine-readable data\n- /api/board?board=all|today&category=\n- /api/ask?q=<plain english question>\n- /api/stats\n\n## Boards\n${D.CATEGORIES.map(c => '- /category/' + c.slug + ' (' + c.name + ')').join('\\n')}\n`));
 app.get('/sitemap.xml', (_, res) => {
   const base = (req => '')(0) || (process.env.PUBLIC_URL || '');
-  const urls = ['/', '/today', '/daily', '/momentum', '/rules', '/about', '/ask', '/submit']
+  const urls = ['/', '/today', '/rules', '/about', '/ask', '/submit']
     .concat(D.CATEGORIES.map(c => '/category/' + c.slug))
     .concat(D.allTime().map(l => '/business/' + l.slug));
   res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.map(u => `<url><loc>${base}${u}</loc></url>`).join('')}</urlset>`);
@@ -126,8 +126,7 @@ app.get('/dashboard', (req, res) => {
 // JSON API for a future Next.js frontend / AI agents
 app.get('/api/board', (req, res) => {
   const kind = req.query.board || 'all';
-  const list = kind === 'today' ? D.todayBoard(f(req.query)) : kind === 'momentum' ? D.momentumBoard(f(req.query))
-    : kind === 'daily' ? D.dailyBoard(req.query.day || D.dayKey(), f(req.query)) : D.allTime(f(req.query));
+  const list = kind === 'today' ? D.todayBoard(f(req.query)) : D.allTime(f(req.query));
   res.json(list.map((l, i) => ({ rank: i + 1, name: l.name, url: l.url, category: D.catName(l.category), city: l.city,
     total: l.total, windowTotal: l.windowTotal, clicks: l.clicks, score: D.visibilityScore(l), slug: l.slug })));
 });

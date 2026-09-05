@@ -34,8 +34,7 @@ const RULES = {
   RAISE_STEP: 1,        // minimum raise on your own listing
   MAX_BID: 999999,
   TAKEOVER_MULTIPLE: 5, // pay 5x current #1 to own the hero banner for 3h
-  TAKEOVER_HOURS: 3,
-  DECAY_DAYS: 30        // "Momentum" board window
+  TAKEOVER_HOURS: 3
 };
 
 const CATEGORIES = [
@@ -57,7 +56,8 @@ const catName = s => (CATEGORIES.find(c => c.slug === s) || { name: 'Other' }).n
 // ---------- boards ----------
 const dayKey = (d = new Date()) => d.toISOString().slice(0, 10);
 const active = () => db.listings.filter(l => l.active);
-const match = (l, f) => (!f.category || l.category === f.category) && (!f.city || l.city === f.city);
+// Ranking dimensions: overall (all of New Zealand) and category. City is profile info only.
+const match = (l, f) => (!f.category || l.category === f.category);
 
 function allTime(f = {}) {
   return active().filter(l => match(l, f)).sort((a, b) => b.total - a.total || a.createdAt - b.createdAt);
@@ -70,14 +70,6 @@ function windowBoard(hours, f = {}) {
     .sort((a, b) => b.windowTotal - a.windowTotal || a.createdAt - b.createdAt);
 }
 const todayBoard = f => windowBoard(24, f);
-function dailyBoard(day, f = {}) {
-  const sums = {};
-  db.bids.forEach(b => { if (b.day === day) sums[b.listingId] = (sums[b.listingId] || 0) + b.amount; });
-  return active().filter(l => sums[l.id] && match(l, f))
-    .map(l => ({ ...l, windowTotal: sums[l.id] })).sort((a, b) => b.windowTotal - a.windowTotal);
-}
-function momentumBoard(f = {}) { return windowBoard(RULES.DECAY_DAYS * 24, f); }
-function dailyArchive() { return [...new Set(db.bids.map(b => b.day))].sort().reverse(); }
 
 function minToTop(f = {}) { const t = allTime(f)[0]; return t ? t.total + RULES.TOP_STEP : RULES.MIN_BID; }
 function minToTopToday(f = {}) { const t = todayBoard(f)[0]; return t ? t.windowTotal + RULES.TOP_STEP : RULES.MIN_BID; }
@@ -179,7 +171,7 @@ function aiSearch(q) {
   const words = s.split(/[^a-z0-9]+/).filter(w => w.length > 3);
   return active().map(l => {
     let sc = visibilityScore(l);
-    if (city && l.city === city) sc += 30;
+    if (city && l.city === city) sc += 12;   // soft relevance hint, not a ranking axis
     if (cat && l.category === cat.slug) sc += 30;
     words.forEach(w => { if ((l.name + ' ' + l.tagline).toLowerCase().includes(w)) sc += 8; });
     return { l, sc };
@@ -195,6 +187,6 @@ const stats = () => ({
   leads: db.leads.length
 });
 
-module.exports = { db, save, saveNow, FILE, RULES, CATEGORIES, CITIES, catName, allTime, todayBoard, dailyBoard, dailyArchive,
-  momentumBoard, minToTop, minToTopToday, rankOf, createListing, addBid, buyTakeover, currentTakeover, track,
+module.exports = { db, save, saveNow, FILE, RULES, CATEGORIES, CITIES, catName, allTime, todayBoard,
+  minToTop, minToTopToday, rankOf, createListing, addBid, buyTakeover, currentTakeover, track,
   addLead, leadsFor, recentActivity, visibilityScore, scoreBreakdown, aiSearch, stats, findByUrl, dayKey };

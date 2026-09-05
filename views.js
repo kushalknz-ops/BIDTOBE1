@@ -22,9 +22,8 @@ const ARROW = '<svg viewBox="0 0 13 13" fill="none"><path d="M2 11L11 2M11 2H4M1
 
 function layout(title, body, active = '', head = '', opts = {}) {
   const s = D.stats(), t = D.currentTakeover();
-  const nav = [['/', 'Board', 'all'], ['/today', 'Today', 'today'], ['/daily', 'Daily', 'daily'],
-    ['/momentum', 'Momentum', 'momentum'], ['/ask', 'Ask', 'ask'], ['/rules', 'Rules', 'rules'],
-    ['/about', 'About', 'about'], ['/dashboard', 'Dashboard', 'dash']];
+  const nav = [['/', 'Board', 'all'], ['/today', 'Today', 'today'], ['/ask', 'Ask', 'ask'],
+    ['/rules', 'Rules', 'rules'], ['/about', 'About', 'about'], ['/dashboard', 'Dashboard', 'dash']];
   return `<!doctype html><html lang="en-NZ"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)}</title>
@@ -83,10 +82,9 @@ function commandData() {
   }));
   D.CATEGORIES.forEach(c => out.push({ group: 'Categories', label: c.name,
     meta: D.allTime({ category: c.slug }).length + ' listed', href: '/category/' + c.slug, icon: '\u25c7' }));
-  D.CITIES.forEach(c => out.push({ group: 'Cities', label: c,
-    meta: D.allTime({ city: c }).length + ' listed', href: '/?city=' + encodeURIComponent(c), icon: '\u25ce' }));
+
   [['Claim a rank', '/submit'], ['All-time board', '/'], ["Today's board", '/today'],
-   ['Momentum board', '/momentum'], ['Ask AI', '/ask'], ['Rules', '/rules'],
+   ['Ask AI', '/ask'], ['Rules', '/rules'],
    ['My dashboard', '/dashboard'], ['Homepage takeover', '/takeover']]
     .forEach(([label, href]) => out.push({ group: 'Go to', label, href, icon: '\u2192' }));
   return out;
@@ -127,31 +125,47 @@ function secHead(n, title, meta) {
 }
 
 function filterBar(base, f) {
-  const q = extra => { const p = new URLSearchParams({ ...(f.category ? { category: f.category } : {}), ...(f.city ? { city: f.city } : {}), ...extra });
-    [...p.entries()].forEach(([k, v]) => { if (!v) p.delete(k); }); const s = p.toString(); return base + (s ? '?' + s : ''); };
-  return `<div class="chips" data-rv="fade">${D.CITIES.map(c => `<a class="chip ${f.city === c ? 'on' : ''}" href="${q({ city: f.city === c ? '' : c })}">${esc(c)}</a>`).join('')}</div>
-  <div class="chips" data-rv="fade">${D.CATEGORIES.map(c => `<a class="chip ${f.category === c.slug ? 'on' : ''}" href="${q({ category: f.category === c.slug ? '' : c.slug })}">${esc(c.name)}</a>`).join('')}</div>`;
+  const q = cat => base + (cat ? '?category=' + cat : '');
+  return `<div class="chips" data-rv="fade">
+    <a class="chip ${!f.category ? 'on' : ''}" href="${q('')}">All of New Zealand</a>
+    ${D.CATEGORIES.map(c => `<a class="chip ${f.category === c.slug ? 'on' : ''}" href="${q(f.category === c.slug ? '' : c.slug)}">${esc(c.name)}</a>`).join('')}</div>`;
 }
 
 function claimBox(f) {
   const need = D.minToTop(f);
   return `<div class="claimbox" data-rv="up" data-d="3">
-    <div class="eyebrow"><span class="dot"></span> Claim #1${f.city ? ' · ' + esc(f.city) : ''}${f.category ? ' · ' + esc(D.catName(f.category)) : ''}</div>
+    <div class="eyebrow"><span class="dot"></span> Claim #1${f.category ? ' in ' + esc(D.catName(f.category)) : ' in New Zealand'}</div>
     <div class="price">${money(need)}</div>
-    <div class="k" style="color:var(--muted)">Minimum to take the top spot</div>
+    <div class="k" style="color:#c9d1cc">Minimum to take ${f.category ? 'the top spot in ' + esc(D.catName(f.category)) : '#1 nationally'}</div>
     <form class="claimform" method="post" action="/submit">
       <input name="url" placeholder="yourbusiness.co.nz" required>
       <input name="name" placeholder="Business name" required>
-      <div class="two">
-        <select name="category">${D.CATEGORIES.map(c => `<option value="${c.slug}" ${f.category === c.slug ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>
-        <select name="city">${D.CITIES.map(c => `<option ${f.city === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
-      </div>
+      <select name="category" aria-label="Category">${D.CATEGORIES.map(c => `<option value="${c.slug}" ${f.category === c.slug ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>
       <div class="two">
         <input name="amount" type="number" min="${D.RULES.MIN_BID}" value="${need}" aria-label="Amount in NZD">
         <button class="btn verm" style="justify-content:center">Claim rank</button>
       </div>
     </form>
     <div class="note">New listings from ${money(D.RULES.MIN_BID)}. Already listed? Enter the same website to raise — you pay only the difference.</div>
+  </div>`;
+}
+
+function heroProof(list, amt) {
+  const s = D.stats();
+  if (!list.length) return '';
+  return `<div class="hero-proof" data-rv="up" data-d="6">
+    <div class="hp-rows">
+      ${list.slice(0, 3).map((l, i) => `<a class="hp-row" href="/business/${l.slug}">
+        <span class="hp-rk">${String(i + 1).padStart(2, '0')}</span>
+        <img class="hp-ico" src="${fav(l.url)}" alt="" loading="lazy">
+        <span class="hp-name">${esc(l.name)}</span>
+        <span class="hp-amt">${money(amt(l))}</span></a>`).join('')}
+    </div>
+    <div class="hp-stats">
+      <div><b>${s.listings}</b><span>businesses</span></div>
+      <div><b>${money(s.revenue)}</b><span>committed</span></div>
+      <div><b>${s.clicks.toLocaleString()}</b><span>clicks sent</span></div>
+    </div>
   </div>`;
 }
 
@@ -168,23 +182,18 @@ function activityFeed() {
 // ---------------- board ----------------
 function board(kind, f, extra = {}) {
   const cfg = {
-    all: { list: D.allTime(f), amt: l => l.total, title: 'All-time', n: 1,
+    all: { list: D.allTime(f), amt: l => l.total,
+      title: f.category ? D.catName(f.category) : 'All-time', n: 1,
       lede: "New Zealand's public board", head: ['One more bid.', 'Be #1.'],
-      intro: 'Every business here has paid to stand where it stands. Nothing is editorial, nothing is an algorithm. Bid to sit above your competitors in your city and your trade \u2014 and know that anyone can take it back from you at any moment.',
-      blurb: 'Everything a business has ever committed. It never expires.' },
-    today: { list: D.todayBoard(f), amt: l => l.windowTotal, title: 'Today', n: 2,
+      intro: 'Every business here has paid to stand where it stands. Nothing is editorial, nothing is an algorithm. Bid to sit above every other business in New Zealand \u2014 and know that anyone can take it back from you at any moment.',
+      blurb: f.category
+        ? `Ranked by everything committed in ${D.catName(f.category)}. Every listing also holds a place on the national board.`
+        : 'Everything a business has ever committed, across all of New Zealand. It never expires.' },
+    today: { list: D.todayBoard(f), amt: l => l.windowTotal,
+      title: f.category ? D.catName(f.category) + ' \u00b7 today' : 'Today', n: 2,
       lede: 'Rolling 24 hours', head: ['Today\u2019s board.'],
       intro: 'Only what was committed in the last twenty-four hours. Each payment counts from the moment you pay, then drops away a day later \u2014 so this board resets itself continuously.',
-      blurb: 'Ranked by spend in the last twenty-four hours.' },
-    daily: { list: D.dailyBoard(extra.day || D.dayKey(), f), amt: l => l.windowTotal,
-      title: 'Daily \u00b7 ' + (extra.day || D.dayKey()), n: 3,
-      lede: 'Calendar day, New Zealand time', head: ['Daily board.'],
-      intro: 'One calendar day, midnight to midnight. The current day stays live; every past day freezes into a permanent archive you can browse below.',
-      blurb: 'Ranked by spend on this calendar day.' },
-    momentum: { list: D.momentumBoard(f), amt: l => l.windowTotal, title: 'Momentum', n: 4,
-      lede: `Last ${D.RULES.DECAY_DAYS} days`, head: ['Momentum board.'],
-      intro: `Only the last ${D.RULES.DECAY_DAYS} days count. Old spend decays out, so an early whale cannot own this board forever \u2014 staying on top means staying active.`,
-      blurb: `Ranked by spend in the last ${D.RULES.DECAY_DAYS} days.` }
+      blurb: 'Ranked by spend in the last twenty-four hours.' }
   }[kind];
   const rest = cfg.list.slice(3);
   return layout(cfg.title + ' · BIDTOBE1', `
@@ -193,21 +202,22 @@ function board(kind, f, extra = {}) {
     ${kind === 'all' ? '<img class="hero-mark" src="/logo-mark.png" alt="" width="104" height="104" data-rv="fade">' : ''}
     <h1 class="display h-hero">${words(cfg.head[0])}${cfg.head[1] ? ` <span class="vermilion">${words(cfg.head[1])}</span>` : ''}</h1>
     <div class="hero-grid">
-      <div><p class="body-lg" data-rv="up" data-d="2" style="max-width:46ch">${esc(cfg.intro)}</p>
+      <div class="hero-left">
+        <p class="body-lg" data-rv="up" data-d="2" style="max-width:46ch">${esc(cfg.intro)}</p>
         <div class="hero-cta" data-rv="up" data-d="4">
           <a class="btn" href="/submit">Claim a rank ${ARROW}</a>
           <a class="arrowlink" href="/rules">Read the rules <span class="ar">${ARROW}</span></a>
-        </div></div>
+        </div>
+        ${heroProof(cfg.list, cfg.amt)}
+      </div>
       ${claimBox(f)}
     </div>
   </div></section>
 
   <div class="wrap">
     <div class="tabs" data-rv="fade">
-      <a class="tab ${kind === 'all' ? 'on' : ''}" href="/">All-time</a>
-      <a class="tab ${kind === 'today' ? 'on' : ''}" href="/today">Today</a>
-      <a class="tab ${kind === 'daily' ? 'on' : ''}" href="/daily">Daily</a>
-      <a class="tab ${kind === 'momentum' ? 'on' : ''}" href="/momentum">Momentum</a>
+      <a class="tab ${kind === 'all' ? 'on' : ''}" href="${kind === 'all' ? '#' : '/'}${f.category ? (kind === 'all' ? '' : '?category=' + f.category) : ''}">All-time</a>
+      <a class="tab ${kind === 'today' ? 'on' : ''}" href="/today${f.category ? '?category=' + f.category : ''}">Today</a>
     </div>
     ${filterBar(kind === 'all' ? '/' : '/' + kind, f)}
     ${secHead(cfg.n, cfg.title, cfg.list.length + ' listed')}
@@ -221,8 +231,6 @@ function board(kind, f, extra = {}) {
           : UI.empty({ icon: '\u25c7', title: 'This board is empty',
               desc: `Nobody has claimed a rank here yet. The first listing takes #1 for ${money(D.RULES.MIN_BID)} \u2014 and holds it until someone pays more.`,
               actions: `<a class="btn verm" href="/submit">Take #1 for ${money(D.RULES.MIN_BID)}</a><a class="btn ghost" href="/rules">How it works</a>` })}
-        ${kind === 'daily' ? `${secHead(5, 'Archive', null)}<div class="chips">${D.dailyArchive().map(d =>
-          `<a class="chip ${d === (extra.day || D.dayKey()) ? 'on' : ''}" href="/daily?day=${d}">${d}</a>`).join('') || '<span class="body">No archived days yet.</span>'}</div>` : ''}
       </div>
       <div>
         ${activityFeed()}
@@ -243,21 +251,20 @@ function board(kind, f, extra = {}) {
 }
 
 function categoryPage(cat, f) {
-  const fl = { category: cat.slug, ...(f.city ? { city: f.city } : {}) };
+  const fl = { category: cat.slug };
   const list = D.allTime(fl);
   return layout(cat.name + ' · BIDTOBE1', `<div class="wrap" id="main">
     <div style="padding-top:var(--s5)">
       <div data-rv="fade">${UI.crumb([{ label: 'Board', href: '/' }, { label: cat.name }])}</div>
-      <h1 class="display h-page" style="margin-top:20px;max-width:16ch">${words('Best ' + cat.name + (f.city ? ' in ' + f.city : ' in New Zealand'))}</h1>
+      <h1 class="display h-page" style="margin-top:20px;max-width:16ch">${words('Best ' + cat.name + ' in New Zealand')}</h1>
       <p class="body-lg" data-rv="up" data-d="2" style="max-width:50ch;margin-top:22px">
         ${list.length} listed, ranked by what each business has committed. To take #1 on this board: <span class="vermilion">${money(D.minToTop(fl))}</span>.</p>
-      <div class="chips" data-rv="fade" style="margin-top:26px">${D.CITIES.map(c =>
-        `<a class="chip ${f.city === c ? 'on' : ''}" href="/category/${cat.slug}${f.city === c ? '' : '?city=' + encodeURIComponent(c)}">${esc(c)}</a>`).join('')}</div>
+
     </div>
     ${secHead(1, cat.name, null)}
     ${list.length ? `<div class="rows">${list.map((l, i) => row(l, i, l.total, l.total + D.RULES.TOP_STEP, i)).join('')}</div>`
       : UI.empty({ icon: '\u25c7', title: 'Nobody holds this category',
-          desc: `${esc(cat.name)}${f.city ? ' in ' + esc(f.city) : ''} is completely unclaimed. Whoever lists first takes #1.`,
+          desc: `${esc(cat.name)} is completely unclaimed nationwide. Whoever lists first takes #1.`,
           actions: `<a class="btn verm" href="/submit">Claim #1 for ${money(D.RULES.MIN_BID)}</a>` })}
   </div>`);
 }
@@ -286,7 +293,7 @@ function profile(l) {
     </div>
     <div class="stats" data-rv="up">
       <div class="stat"><span>Category rank</span><b>#${String(inCat).padStart(2, '0')}</b><span style="margin-top:6px">of ${catCount} in ${esc(D.catName(l.category))}</span></div>
-      <div class="stat"><span>Overall</span><b>#${String(overall).padStart(2, '0')}</b><span style="margin-top:6px">of ${total} on the board</span></div>
+      <div class="stat"><span>New Zealand rank</span><b>#${String(overall).padStart(2, '0')}</b><span style="margin-top:6px">of ${total} nationally</span></div>
       <div class="stat"><span>Committed</span><b>${money(l.total)}</b><span style="margin-top:6px">raised ${l.raises} time${l.raises === 1 ? '' : 's'}</span></div>
       <div class="stat"><span>${UI.tip('AI visibility', 'Blends rank spend (capped at 35), click-through, profile completeness, enquiries and verification. Money alone cannot buy 100.')}</span><b>${D.visibilityScore(l)}</b><span style="margin-top:6px">out of 100</span></div>
     </div>
@@ -294,7 +301,7 @@ function profile(l) {
       <div>
         ${secHead(1, 'About this ranking', null)}
         <div class="q"><h3>What rank does ${esc(l.name)} hold?</h3>
-          <p class="body">${esc(l.name)} has committed ${money(l.total)} to rank #${inCat} of ${catCount} in ${esc(D.catName(l.category))}, and #${overall} of ${total} overall.</p></div>
+          <p class="body">${esc(l.name)} has committed ${money(l.total)} to rank #${inCat} of ${catCount} in ${esc(D.catName(l.category))}, and #${overall} of ${total} across New Zealand.</p></div>
         <div class="q"><h3>Have they ranked today?</h3>
           <p class="body">${onToday ? 'Yes — they have added spend in the last twenty-four hours and appear on <a class="vermilion" href="/today">today\'s board</a>.' : 'No spend in the last twenty-four hours, so they are not on today\'s board.'}</p></div>
         <div class="q"><h3>How do I outrank them?</h3>
@@ -339,7 +346,7 @@ function profile(l) {
       address: { '@type': 'PostalAddress', addressLocality: l.city, addressCountry: 'NZ' } },
     { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: [
       { '@type': 'Question', name: `What rank does ${l.name} hold on BIDTOBE1?`, acceptedAnswer: { '@type': 'Answer',
-        text: `${l.name} has committed $${l.total} to rank #${inCat} of ${catCount} in ${D.catName(l.category)} and #${overall} of ${total} overall.` } },
+        text: `${l.name} has committed $${l.total} to rank #${inCat} of ${catCount} in ${D.catName(l.category)} and #${overall} of ${total} across New Zealand.` } },
       { '@type': 'Question', name: `How do I outrank ${l.name}?`, acceptedAnswer: { '@type': 'Answer',
         text: `Anyone can take this rank for $${l.total + D.RULES.TOP_STEP} on the ${D.catName(l.category)} board.` } },
       { '@type': 'Question', name: 'Is this an editorial recommendation?', acceptedAnswer: { '@type': 'Answer',
@@ -370,8 +377,9 @@ function submit(err, v = {}) {
         <div class="field-row">
           ${UI.field({ label: 'Category', name: 'category', value: v.category,
             options: D.CATEGORIES.map(c => ({ value: c.slug, label: c.name })) })}
-          ${UI.field({ label: 'City / region', name: 'city', value: v.city,
-            options: D.CITIES.map(c => ({ value: c, label: c })) })}
+          ${UI.field({ label: 'Where you operate', name: 'city', value: v.city,
+            options: D.CITIES.map(c => ({ value: c, label: c })),
+            desc: 'Shown on your profile. Rank is national.' })}
         </div>
         <div class="field-row">
           ${UI.field({ label: 'Phone', name: 'phone', type: 'tel', value: v.phone, autocomplete: 'tel',
@@ -462,11 +470,10 @@ function rules() {
     ${secHead(1, 'The boards', null)}
     <p class="body-lg" data-rv="fade" style="max-width:54ch;margin-top:-14px">One payment ranks you on every board that includes that spend. The boards simply look at different windows of time.</p>
     <ul class="list" data-rv="up" style="margin-top:26px">
-      <li><span><b style="color:var(--bone);font-weight:400">All-time</b> — the main board. Rank is everything you have ever paid for that listing. It does not expire.</span></li>
+      <li><span><b style="color:var(--bone);font-weight:400">All-time</b> — the main board. Rank is everything you have ever paid for that listing, measured against every business in New Zealand. It does not expire.</span></li>
       <li><span><b style="color:var(--bone);font-weight:400">Today</b> — a rolling twenty-four hours. Each payment counts from the moment you pay, then drops off a day later.</span></li>
-      <li><span><b style="color:var(--bone);font-weight:400">Daily</b> — a calendar day in New Zealand time. The current day stays live; past days freeze as an archive.</span></li>
-      <li><span><b style="color:var(--bone);font-weight:400">Momentum</b> — only the last ${R.DECAY_DAYS} days count. Old spend decays out, so an early whale cannot own the board forever.</span></li>
-      <li><span><b style="color:var(--bone);font-weight:400">Category and city</b> — every listing also competes inside its trade and its city, so ${money(50)} can still buy #1 in Hamilton plumbing.</span></li>
+      <li><span><b style="color:var(--bone);font-weight:400">Category</b> — one payment ranks you twice: nationally, and inside your trade. A smaller budget can still take #1 in a category while sitting mid-table nationally.</span></li>
+      <li><span><b style="color:var(--bone);font-weight:400">Location</b> — the city on your listing is profile information for buyers. It does not affect your rank; every business competes on one national board.</span></li>
     </ul>
     ${secHead(2, 'How ranking works', null)}
     <ul class="list" data-rv="up">
@@ -575,8 +582,9 @@ function dashboard(l, owned = []) {
             actions: '<a class="btn verm" href="/submit">Claim a rank</a><a class="btn ghost" href="/">Browse the board</a>' })}
     </div>`, 'dash', '', { noIndex: true });
   }
-  const catCity = { category: l.category, city: l.city };
-  const rank = D.rankOf(l.id, catCity), boardList = D.allTime(catCity);
+  const inCat = { category: l.category };
+  const rank = D.rankOf(l.id, inCat), boardList = D.allTime(inCat);
+  const natRank = D.rankOf(l.id);
   const above = boardList[rank - 2];
   const leads = D.leadsFor(l.id).slice().reverse();
   const ctr = l.views ? (l.clicks / l.views * 100).toFixed(1) : '0.0';
@@ -587,7 +595,8 @@ function dashboard(l, owned = []) {
       <div style="margin-top:18px" data-rv="fade"><a class="arrowlink" href="/business/${l.slug}">View public profile <span class="ar">${ARROW}</span></a></div>
     </div>
     <div class="stats" data-rv="up">
-      <div class="stat"><span>Rank · ${esc(l.city)}</span><b>#${String(rank).padStart(2, '0')}</b></div>
+      <div class="stat"><span>${esc(D.catName(l.category))}</span><b>#${String(rank).padStart(2, '0')}</b></div>
+      <div class="stat"><span>New Zealand</span><b>#${String(natRank).padStart(2, '0')}</b></div>
       <div class="stat"><span>Committed</span><b>${money(l.total)}</b></div>
       <div class="stat"><span>Profile views</span><b>${l.views.toLocaleString()}</b></div>
       <div class="stat"><span>Website clicks</span><b>${l.clicks.toLocaleString()}</b></div>

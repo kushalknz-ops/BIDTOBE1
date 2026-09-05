@@ -14,7 +14,7 @@ const DEVICES = [
   { name: 'Laptop',           w: 1440, h: 900,  m: false },
   { name: 'Desktop wide',     w: 1920, h: 1080, m: false }
 ];
-const PAGES = ['/', '/today', '/momentum', '/rules', '/about', '/ask', '/submit', '/dashboard',
+const PAGES = ['/', '/today', '/rules', '/about', '/ask', '/submit', '/dashboard',
   '/business/kushal-ai', '/category/ai-agents-automation'];
 
 (async () => {
