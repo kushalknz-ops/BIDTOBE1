@@ -1,0 +1,16 @@
+{
+  "name": "nzrank",
+  "version": "1.0.0",
+  "description": "NZRank — New Zealand's public pay-to-rank business leaderboard.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node pentest.js",
+    "seed": "node seed.js"
+  },
+  "engines": { "node": ">=20" },
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": { "express": "^5.2.1" }
+}
