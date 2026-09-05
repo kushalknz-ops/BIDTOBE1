@@ -42,11 +42,18 @@ ${head}<style>${THEME.CSS}</style></head><body>
   <span>${s.leads} enquiries</span>
   ${t ? `<span class="vermilion">Takeover — ${esc(t.listing.name)}</span>` : ''}
 </div>
-<header><nav class="nav">
-  <a class="logo" href="/">NZ<i>·</i>Rank</a>
-  ${nav.map(([h, l, k]) => `<a class="link ${active === k ? 'on' : ''}" href="${h}">${l}</a>`).join('')}
-  <span class="navspace"></span>
-  <a class="btn sm verm" href="/submit">Claim a rank</a>
+<header><nav class="nav" id="nav">
+  <a class="logo" href="/" aria-label="BIDTOBE1 home">
+    <img src="/logo-mark.png" alt="" width="26" height="26">
+    <span>BIDTOBE<i>1</i></span>
+  </a>
+  <div class="navlinks" id="navlinks">
+    ${nav.map(([h, l, k]) => `<a class="link ${active === k ? 'on' : ''}" href="${h}">${l}</a>`).join('')}
+    <a class="btn sm verm navcta" href="/submit">Claim a rank</a>
+  </div>
+  <button class="burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="navlinks">
+    <span></span><span></span>
+  </button>
 </nav></header>
 <div class="page">${body}</div>
 <footer>
@@ -279,7 +286,7 @@ function profile(l) {
       </div>
       <div style="padding-top:clamp(56px,9vh,110px)">
         <div class="panel" data-rv="up"><div class="eyebrow" style="margin-bottom:16px"><span class="dot"></span> Contact</div>
-          <div class="k" style="color:var(--muted)">Website</div><a class="body" style="color:var(--bone);display:block;margin-bottom:14px" href="/go/${l.id}">${esc(l.url)}</a>
+          <div class="k" style="color:var(--muted)">Website</div><a class="body" style="color:var(--bone);display:block;margin-bottom:14px;padding:4px 0;min-height:28px" href="/go/${l.id}">${esc(l.url)}</a>
           ${l.phone ? `<div class="k" style="color:var(--muted)">Phone</div><div class="body" style="color:var(--bone);margin-bottom:14px">${esc(l.phone)}</div>` : ''}
           ${l.email ? `<div class="k" style="color:var(--muted)">Email</div><div class="body" style="color:var(--bone);margin-bottom:14px">${esc(l.email)}</div>` : ''}
           <div class="k" style="color:var(--muted)">Serving</div><div class="body" style="color:var(--bone)">${esc(l.city)}</div></div>
