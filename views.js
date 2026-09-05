@@ -1,5 +1,6 @@
 const D = require('./db');
 const THEME = require('./theme');
+const UI = require('./ui');
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const money = n => '$' + Math.round(Number(n)).toLocaleString('en-NZ');
 const ago = ts => { const m = (Date.now() - ts) / 60000; if (m < 60) return Math.max(1, Math.round(m)) + ' min ago';
@@ -13,9 +14,13 @@ const words = (t, cls = '') => `<span class="${cls}">` + String(t).split(' ')
 
 let NONCE = '';
 const setNonce = n => { NONCE = n || ''; };
+// Safe JSON for embedding inside <script>: neutralises </script>, HTML comments and JS line separators.
+const safeJson = o => JSON.stringify(o)
+  .replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026')
+  .replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 const ARROW = '<svg viewBox="0 0 13 13" fill="none"><path d="M2 11L11 2M11 2H4M11 2V9" stroke="#dfe7e0" stroke-width="1.2"/></svg>';
 
-function layout(title, body, active = '', head = '') {
+function layout(title, body, active = '', head = '', opts = {}) {
   const s = D.stats(), t = D.currentTakeover();
   const nav = [['/', 'Board', 'all'], ['/today', 'Today', 'today'], ['/daily', 'Daily', 'daily'],
     ['/momentum', 'Momentum', 'momentum'], ['/ask', 'Ask', 'ask'], ['/rules', 'Rules', 'rules'],
@@ -33,7 +38,7 @@ function layout(title, body, active = '', head = '') {
 <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png">
 <link rel="apple-touch-icon" href="/icon-180.png">
 <link rel="manifest" href="/site.webmanifest">
-${head}<style>${THEME.CSS}</style></head><body>
+${head}<style>${THEME.CSS}${UI.CSS}</style></head><body>
 <a class="skip" href="#main">Skip to content</a>
 <div class="ticker">
   <span class="live"><span class="pip"></span>${s.listings} listed</span>
@@ -51,6 +56,10 @@ ${head}<style>${THEME.CSS}</style></head><body>
     ${nav.map(([h, l, k]) => `<a class="link ${active === k ? 'on' : ''}" href="${h}">${l}</a>`).join('')}
     <a class="btn sm verm navcta" href="/submit">Claim a rank</a>
   </div>
+  <button class="cmd-trigger" type="button" aria-label="Search (Command K)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+    <span class="ct-label">Search</span><span class="kbd">${'\u2318'}K</span>
+  </button>
   <button class="burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="navlinks">
     <span></span><span></span>
   </button>
@@ -62,7 +71,25 @@ ${head}<style>${THEME.CSS}</style></head><body>
   <div class="fl"><a href="/rules">Rules</a><a href="/about">About</a><a href="/ask">AI Search</a><a href="/submit">Claim</a></div>
   <div class="fl" style="margin-top:20px;color:#4a534d">Paid placement · listings are advertisements, not editorial rankings · demo payments</div>
 </footer>
-<script${NONCE ? ` nonce="${NONCE}"` : ''}>${THEME.JS}</script></body></html>`;
+<script${NONCE ? ` nonce="${NONCE}"` : ''}>window.__CMD__=${safeJson(opts.noIndex ? commandData().filter(c => c.group === 'Go to') : commandData())};</script>
+<script${NONCE ? ` nonce="${NONCE}"` : ''}>${THEME.JS}${UI.JS}</script></body></html>`;
+}
+
+function commandData() {
+  const out = [];
+  D.allTime().slice(0, 60).forEach(l => out.push({
+    group: 'Businesses', label: l.name, meta: '#' + D.rankOf(l.id) + ' \u00b7 ' + money(l.total),
+    href: '/business/' + l.slug, icon: '\u25b8'
+  }));
+  D.CATEGORIES.forEach(c => out.push({ group: 'Categories', label: c.name,
+    meta: D.allTime({ category: c.slug }).length + ' listed', href: '/category/' + c.slug, icon: '\u25c7' }));
+  D.CITIES.forEach(c => out.push({ group: 'Cities', label: c,
+    meta: D.allTime({ city: c }).length + ' listed', href: '/?city=' + encodeURIComponent(c), icon: '\u25ce' }));
+  [['Claim a rank', '/submit'], ['All-time board', '/'], ["Today's board", '/today'],
+   ['Momentum board', '/momentum'], ['Ask AI', '/ask'], ['Rules', '/rules'],
+   ['My dashboard', '/dashboard'], ['Homepage takeover', '/takeover']]
+    .forEach(([label, href]) => out.push({ group: 'Go to', label, href, icon: '\u2192' }));
+  return out;
 }
 
 const badges = l => (l.verified ? '<span class="badge v">Verified</span>' : '')
@@ -184,9 +211,9 @@ function board(kind, f, extra = {}) {
         ${cfg.list.length
           ? (rest.length ? `<div class="rows">${rest.map((l, i) => row(l, i + 3, cfg.amt(l), cfg.amt(l) + D.RULES.TOP_STEP, i)).join('')}</div>`
             : '<div class="panel body">Only the top three so far. The rest of the board is open.</div>')
-          : `<div class="panel"><div class="rname">The board is empty</div>
-             <p class="body" style="margin-top:10px">Nobody has claimed a rank here yet. First listing takes #1 for ${money(D.RULES.MIN_BID)}.</p>
-             <a class="btn verm sm" style="margin-top:18px" href="/submit">Take #1</a></div>`}
+          : UI.empty({ icon: '\u25c7', title: 'This board is empty',
+              desc: `Nobody has claimed a rank here yet. The first listing takes #1 for ${money(D.RULES.MIN_BID)} \u2014 and holds it until someone pays more.`,
+              actions: `<a class="btn verm" href="/submit">Take #1 for ${money(D.RULES.MIN_BID)}</a><a class="btn ghost" href="/rules">How it works</a>` })}
         ${kind === 'daily' ? `${secHead(5, 'Archive', '記録')}<div class="chips">${D.dailyArchive().map(d =>
           `<a class="chip ${d === (extra.day || D.dayKey()) ? 'on' : ''}" href="/daily?day=${d}">${d}</a>`).join('') || '<span class="body">No archived days yet.</span>'}</div>` : ''}
       </div>
@@ -213,7 +240,7 @@ function categoryPage(cat, f) {
   const list = D.allTime(fl);
   return layout(cat.name + ' · BIDTOBE1', `<div class="wrap" id="main">
     <div style="padding-top:clamp(40px,8vh,90px)">
-      <div class="eyebrow" data-rv="fade"><span class="dot"></span> Category board</div>
+      <div data-rv="fade">${UI.crumb([{ label: 'Board', href: '/' }, { label: cat.name }])}</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:16ch">${words('Best ' + cat.name + (f.city ? ' in ' + f.city : ' in New Zealand'))}</h1>
       <p class="body-lg" data-rv="up" data-d="2" style="max-width:50ch;margin-top:22px">
         ${list.length} listed, ranked by what each business has committed. To take #1 on this board: <span class="vermilion">${money(D.minToTop(fl))}</span>.</p>
@@ -222,8 +249,9 @@ function categoryPage(cat, f) {
     </div>
     ${secHead(1, cat.name, '部門')}
     ${list.length ? `<div class="rows">${list.map((l, i) => row(l, i, l.total, l.total + D.RULES.TOP_STEP, i)).join('')}</div>`
-      : `<div class="panel"><div class="rname">Unclaimed</div><p class="body" style="margin-top:10px">Nobody holds this category yet.</p>
-         <a class="btn verm sm" style="margin-top:18px" href="/submit">Take #1 for ${money(D.RULES.MIN_BID)}</a></div>`}
+      : UI.empty({ icon: '\u25c7', title: 'Nobody holds this category',
+          desc: `${esc(cat.name)}${f.city ? ' in ' + esc(f.city) : ''} is completely unclaimed. Whoever lists first takes #1.`,
+          actions: `<a class="btn verm" href="/submit">Claim #1 for ${money(D.RULES.MIN_BID)}</a>` })}
   </div>`);
 }
 
@@ -234,7 +262,8 @@ function profile(l) {
   const onToday = D.todayBoard().some(x => x.id === l.id);
   return layout(`${l.name} · #${overall} on BIDTOBE1`, `<div class="wrap" id="main">
     <div style="padding-top:clamp(36px,7vh,80px)">
-      <div class="eyebrow" data-rv="fade"><span class="dot"></span> <a href="/">Board</a> · <a href="/category/${l.category}">${esc(D.catName(l.category))}</a></div>
+      <div data-rv="fade">${UI.crumb([{ label: 'Board', href: '/' },
+        { label: D.catName(l.category), href: '/category/' + l.category }, { label: l.name }])}</div>
       <div style="display:flex;gap:20px;align-items:flex-start;margin-top:24px">
         <img class="ico" style="width:56px;height:56px" src="${fav(l.url)}" alt="" data-rv="fade">
         <div><h1 class="display h-page" style="max-width:18ch">${words(l.name)}</h1>
@@ -245,13 +274,14 @@ function profile(l) {
         <a class="btn" href="/go/${l.id}" target="_blank" rel="nofollow noopener">Visit website ${ARROW}</a>
         <a class="btn ghost" href="/raise/${l.id}">Outbid / raise</a>
         <a class="btn ghost" href="#enquiry">Request a quote</a>
+        <button class="copy-btn" type="button" data-copy="url">Copy link</button>
       </div>
     </div>
     <div class="stats" data-rv="up">
       <div class="stat"><span>Category rank</span><b>#${String(inCat).padStart(2, '0')}</b><span style="margin-top:6px">of ${catCount} in ${esc(D.catName(l.category))}</span></div>
       <div class="stat"><span>Overall</span><b>#${String(overall).padStart(2, '0')}</b><span style="margin-top:6px">of ${total} on the board</span></div>
       <div class="stat"><span>Committed</span><b>${money(l.total)}</b><span style="margin-top:6px">raised ${l.raises} time${l.raises === 1 ? '' : 's'}</span></div>
-      <div class="stat"><span>AI visibility</span><b>${D.visibilityScore(l)}</b><span style="margin-top:6px">out of 100</span></div>
+      <div class="stat"><span>${UI.tip('AI visibility', 'Blends rank spend (capped at 35), click-through, profile completeness, enquiries and verification. Money alone cannot buy 100.')}</span><b>${D.visibilityScore(l)}</b><span style="margin-top:6px">out of 100</span></div>
     </div>
     <div class="split">
       <div>
@@ -275,13 +305,15 @@ function profile(l) {
         </div>
 
         ${secHead(3, 'Request a quote', '問合')}
-        <form class="panel" method="post" action="/lead/${l.id}" id="enquiry" data-rv="up">
-          <label>Your name<input name="name" required></label>
-          <label>Email<input name="email" type="email" required></label>
-          <label>Phone<input name="phone"></label>
-          <label>What do you need?<textarea name="message" rows="3" placeholder="e.g. AI receptionist for a six-person clinic in Auckland"></textarea></label>
-          <button class="btn verm" style="margin-top:24px">Send enquiry ${ARROW}</button>
-          <div class="note">Goes straight to the business. BIDTOBE1 never sells your details.</div>
+        <form class="panel" method="post" action="/lead/${l.id}" id="enquiry" data-rv="up" novalidate>
+          ${UI.field({ label: 'Your name', name: 'name', required: true, autocomplete: 'name' })}
+          ${UI.field({ label: 'Email', name: 'email', type: 'email', required: true, autocomplete: 'email',
+            desc: 'So they can reply. Never sold or shared.' })}
+          ${UI.field({ label: 'Phone', name: 'phone', type: 'tel', autocomplete: 'tel', desc: 'Optional \u2014 speeds up a callback.' })}
+          ${UI.field({ label: 'What do you need?', name: 'message', rows: 4,
+            placeholder: 'e.g. AI receptionist for a six-person clinic in Auckland' })}
+          <button class="btn verm" style="margin-top:24px" data-loading-text="Sending">Send enquiry ${ARROW}</button>
+          <div class="field-desc" style="margin-top:14px">Goes straight to ${esc(l.name)}. BIDTOBE1 never sells your details.</div>
         </form>
       </div>
       <div style="padding-top:clamp(56px,9vh,110px)">
@@ -317,19 +349,34 @@ function submit(err, v = {}) {
         New listings start at ${money(D.RULES.MIN_BID)}. Taking #1 overall currently costs ${money(D.minToTop())}.
         Paying less still puts you on the board, at whatever rank that amount can hold.</p>
     </div>
-    ${err ? `<div class="err" data-rv="fade">${esc(err)}</div>` : ''}
+    ${err ? `<div data-rv="fade">${UI.alert('destructive', 'Could not claim that rank', esc(err))}</div>` : ''}
     <div class="split" style="margin-top:clamp(32px,5vh,56px)">
-      <form class="panel" method="post" action="/submit" data-rv="up">
-        <label>Website<input name="url" placeholder="yourbusiness.co.nz" required value="${esc(v.url)}"></label>
-        <label>Business name<input name="name" required value="${esc(v.name)}"></label>
-        <label>One-line pitch<input name="tagline" maxlength="140" value="${esc(v.tagline)}"></label>
-        <label>Category<select name="category">${D.CATEGORIES.map(c => `<option value="${c.slug}" ${v.category === c.slug ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
-        <label>City / region<select name="city">${D.CITIES.map(c => `<option ${v.city === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label>
-        <label>Phone<input name="phone" value="${esc(v.phone)}"></label>
-        <label>Email<input name="email" value="${esc(v.email)}"></label>
-        <label>Amount in NZD<input name="amount" type="number" min="${D.RULES.MIN_BID}" value="${esc(v.amount || D.RULES.MIN_BID)}"></label>
-        <button class="btn verm" style="margin-top:26px">Pay and claim my rank ${ARROW}</button>
-        <div class="note">Demo mode — no card is charged. The Stripe hook is marked in server.js.</div>
+      <form class="panel" method="post" action="/submit" data-rv="up" novalidate
+            data-confirm="1" data-confirm-title="Confirm your claim"
+            data-confirm-desc="This claims your rank immediately. Payments are final and anyone can outbid you at any time."
+            data-confirm-label="Your bid" data-confirm-ok="Pay and claim">
+        ${UI.field({ label: 'Website', name: 'url', value: v.url, required: true, placeholder: 'yourbusiness.co.nz',
+          desc: 'Where your listing sends visitors. Tracking parameters are stripped.', autocomplete: 'url', inputmode: 'url' })}
+        ${UI.field({ label: 'Business name', name: 'name', value: v.name, required: true, autocomplete: 'organization' })}
+        ${UI.field({ label: 'One-line pitch', name: 'tagline', value: v.tagline,
+          desc: 'The one sentence buyers read on the board. Outcome-led beats generic \u2014 it decides your click-through.' })}
+        <div class="field-row">
+          ${UI.field({ label: 'Category', name: 'category', value: v.category,
+            options: D.CATEGORIES.map(c => ({ value: c.slug, label: c.name })) })}
+          ${UI.field({ label: 'City / region', name: 'city', value: v.city,
+            options: D.CITIES.map(c => ({ value: c, label: c })) })}
+        </div>
+        <div class="field-row">
+          ${UI.field({ label: 'Phone', name: 'phone', type: 'tel', value: v.phone, autocomplete: 'tel',
+            desc: 'Adds visibility points.' })}
+          ${UI.field({ label: 'Email', name: 'email', type: 'email', value: v.email, autocomplete: 'email',
+            desc: 'Where enquiries land.' })}
+        </div>
+        ${UI.field({ label: 'Amount', name: 'amount', type: 'number', value: v.amount || D.RULES.MIN_BID,
+          min: D.RULES.MIN_BID, max: D.RULES.MAX_BID, required: true, prefix: 'NZ$', inputmode: 'numeric',
+          desc: `Minimum ${money(D.RULES.MIN_BID)}. ${money(D.minToTop())} takes #1 overall right now.` })}
+        <button class="btn verm" style="margin-top:26px" data-loading-text="Claiming">Pay and claim my rank ${ARROW}</button>
+        ${UI.alert('info', 'Demo mode', 'No card is charged. The Stripe hook is marked in server.js.')}
       </form>
       <div style="padding-top:6px">
         <div class="panel" data-rv="up"><div class="eyebrow" style="margin-bottom:16px"><span class="dot"></span> What you get</div>
@@ -353,14 +400,19 @@ function raise(l, err) {
       <h1 class="display h-page" style="margin-top:20px;max-width:16ch">${words(l.name)}</h1>
       <p class="body-lg" data-rv="up" data-d="2" style="margin-top:20px">Currently ${money(l.total)}, sitting at #${D.rankOf(l.id)}. You pay only the difference.</p>
     </div>
-    ${err ? `<div class="err">${esc(err)}</div>` : ''}
-    <form class="panel" method="post" action="/raise/${l.id}" style="margin-top:34px;max-width:520px" data-rv="up">
-      <label>Add amount in NZD<input name="amount" type="number" min="${D.RULES.RAISE_STEP}" value="${Math.max(D.RULES.RAISE_STEP, needCat - l.total)}"></label>
+    ${err ? UI.alert('destructive', 'Could not raise', esc(err)) : ''}
+    <form class="panel" method="post" action="/raise/${l.id}" style="margin-top:34px;max-width:520px" data-rv="up" novalidate
+          data-confirm="1" data-confirm-title="Confirm your raise"
+          data-confirm-desc="You only pay the difference. Payments are final and your new rank is not guaranteed."
+          data-confirm-label="You add" data-confirm-ok="Pay and climb">
+      ${UI.field({ label: 'Add amount', name: 'amount', type: 'number', prefix: 'NZ$', inputmode: 'numeric',
+        value: Math.max(D.RULES.RAISE_STEP, needCat - l.total), min: D.RULES.RAISE_STEP, max: D.RULES.MAX_BID, required: true,
+        desc: `Current total ${money(l.total)}. You only pay the difference.` })}
       <ul class="list" style="margin-top:22px">
-        <li>+${money(Math.max(1, needCat - l.total))} takes #1 in ${esc(D.catName(l.category))}</li>
-        <li>+${money(Math.max(1, needTop - l.total))} takes #1 overall</li>
+        <li><span><b style="color:var(--bone);font-weight:400">+${money(Math.max(1, needCat - l.total))}</b> takes #1 in ${esc(D.catName(l.category))}</span></li>
+        <li><span><b style="color:var(--bone);font-weight:400">+${money(Math.max(1, needTop - l.total))}</b> takes #1 overall</span></li>
       </ul>
-      <button class="btn verm" style="margin-top:26px">Pay and climb ${ARROW}</button>
+      <button class="btn verm" style="margin-top:26px" data-loading-text="Processing">Pay and climb ${ARROW}</button>
     </form>
   </div>`);
 }
@@ -375,11 +427,17 @@ function takeover(err) {
         Pay ${D.RULES.TAKEOVER_MULTIPLE}× the current #1 — ${money(need)} — and your business owns the banner across every page
         for ${D.RULES.TAKEOVER_HOURS} hours, regardless of what the board says. The spend still counts toward your normal rank.</p>
     </div>
-    ${err ? `<div class="err">${esc(err)}</div>` : ''}
-    <form class="panel" method="post" action="/takeover" style="margin-top:34px;max-width:520px" data-rv="up">
-      <label>Listing<select name="listingId">${list.map(l => `<option value="${l.id}">${esc(l.name)} — ${money(l.total)}</option>`).join('')}</select></label>
-      <label>Amount in NZD<input name="amount" type="number" min="${need}" value="${need}"></label>
-      <button class="btn verm" style="margin-top:26px">Buy the takeover ${ARROW}</button>
+    ${err ? UI.alert('destructive', 'Could not buy takeover', esc(err)) : ''}
+    <form class="panel" method="post" action="/takeover" style="margin-top:34px;max-width:520px" data-rv="up" novalidate
+          data-confirm="1" data-confirm-title="Confirm the takeover"
+          data-confirm-desc="Your business owns the banner across every page for ${D.RULES.TAKEOVER_HOURS} hours. Payments are final."
+          data-confirm-label="Takeover cost" data-confirm-ok="Buy takeover">
+      ${UI.field({ label: 'Listing', name: 'listingId',
+        options: list.map(l => ({ value: l.id, label: l.name + ' \u2014 ' + money(l.total) })) })}
+      ${UI.field({ label: 'Amount', name: 'amount', type: 'number', prefix: 'NZ$', inputmode: 'numeric',
+        value: need, min: need, max: D.RULES.MAX_BID, required: true,
+        desc: `${D.RULES.TAKEOVER_MULTIPLE}\u00d7 the current #1. Also counts toward your normal rank.` })}
+      <button class="btn verm" style="margin-top:26px" data-loading-text="Processing">Buy the takeover ${ARROW}</button>
     </form>
   </div>`);
 }
@@ -481,7 +539,9 @@ function ask(q, results) {
     </div>
     ${q ? `${secHead(1, 'Top matches', '結果')}
       ${results.length ? `<div class="rows">${results.map((l, i) => row(l, i, l.total, null, i)).join('')}</div>`
-        : '<div class="panel body">No matches yet — the board is still small.</div>'}
+        : UI.empty({ icon: '\u25ce', title: 'No matches',
+            desc: 'Nothing on the board fits that yet. Try a broader city or category \u2014 or claim the spot yourself.',
+            actions: '<a class="btn verm" href="/submit">Claim it</a>' })}
       <div class="note" style="margin-top:24px">Ranking here blends paid position with performance signals, and paid placement is always disclosed.
         Swap this deterministic matcher for an LLM over the same data when you are ready.</div>` : ''}
   </div>`, 'ask');
@@ -503,10 +563,10 @@ function dashboard(l, owned = []) {
         <a class="grow" href="/dashboard?id=${x.id}"><div class="rname">${esc(x.name)}</div>
           <div class="rmeta">${esc(D.catName(x.category))} · ${esc(x.city)}</div></a>
         <div class="ramt"><b>${money(x.total)}</b><span>committed</span></div></div>`).join('')}</div>`
-        : `<div class="panel"><div class="rname">Nothing here yet</div>
-           <p class="body" style="margin-top:10px">You do not own a listing in this browser.</p>
-           <a class="btn verm sm" style="margin-top:18px" href="/submit">Claim a rank</a></div>`}
-    </div>`, 'dash');
+        : UI.empty({ icon: '\u25a1', title: 'No listings in this browser',
+            desc: 'Analytics and customer enquiries are private to the business that owns a listing. Claim or raise one from this browser and its dashboard unlocks here.',
+            actions: '<a class="btn verm" href="/submit">Claim a rank</a><a class="btn ghost" href="/">Browse the board</a>' })}
+    </div>`, 'dash', '', { noIndex: true });
   }
   const catCity = { category: l.category, city: l.city };
   const rank = D.rankOf(l.id, catCity), boardList = D.allTime(catCity);
@@ -527,7 +587,7 @@ function dashboard(l, owned = []) {
       <div class="stat"><span>Click-through</span><b>${ctr}%</b></div>
       <div class="stat"><span>Enquiries</span><b>${leads.length}</b></div>
       <div class="stat"><span>Cost per click</span><b>${l.clicks ? money(l.total / l.clicks) : '—'}</b></div>
-      <div class="stat"><span>Cost per enquiry</span><b>${leads.length ? money(l.total / leads.length) : '—'}</b></div>
+      <div class="stat"><span>${UI.tip('Cost per enquiry', 'Total committed divided by enquiries received. Compare this against your usual cost per lead before raising.')}</span><b>${leads.length ? money(l.total / leads.length) : '\u2014'}</b></div>
     </div>
     ${secHead(1, 'Recommendations', '助言')}
     <ul class="list" data-rv="up">
@@ -548,12 +608,14 @@ function dashboard(l, owned = []) {
       <div class="grow"><div class="rname">${esc(x.name)}</div>
         <div class="body" style="margin-top:6px">${esc(x.message)}</div>
         <div class="rmeta">${esc(x.email)}${x.phone ? ' · ' + esc(x.phone) : ''} · ${new Date(x.ts).toLocaleString('en-NZ')}</div></div></div>`).join('')}</div>`
-      : '<div class="panel body">No enquiries yet.</div>'}
+      : UI.empty({ icon: '\u2709', title: 'No enquiries yet',
+          desc: 'When someone submits the quote form on your profile it lands here. Listings with a complete pitch, phone and email convert roughly twice as often.',
+          actions: `<a class="btn ghost" href="/business/${l.slug}#enquiry">View your form</a>` })}
     <div style="display:flex;gap:14px;margin-top:36px;flex-wrap:wrap" data-rv="up">
       <a class="btn verm" href="/raise/${l.id}">Climb the board ${ARROW}</a>
       <a class="btn ghost" href="/takeover">Buy a takeover</a>
     </div>
-  </div>`, 'dash');
+  </div>`, 'dash', '', { noIndex: true });
 }
 
 module.exports = { setNonce, jsonld, layout, board, categoryPage, profile, submit, raise, takeover, rules, about, ask, dashboard, esc, money };

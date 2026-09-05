@@ -99,3 +99,20 @@ These are the answers to "can we make this more interesting" — each one attack
 - Terms: payments final, rank not guaranteed, right to remove listings.
 - Fair Trading Act: paid placement must be obvious on every screen — it's in the ticker, hero, rules and footer. Don't publish testimonials you can't evidence (the `/about` ones are labelled placeholders).
 - Seed one category (Auckland AI & Automation) with 20–30 real free listings before opening bidding.
+
+## UI kit (`ui.js`)
+shadcn/ui patterns ported to vanilla server-rendered HTML — no React, no Tailwind, no build step.
+
+| Primitive | Where it's used |
+|---|---|
+| **Field** | Every form: label + control + description + inline error, wired to native constraint validation with `aria-invalid` |
+| **Command (⌘K)** | Nav search — fuzzy-filters businesses, categories, cities and pages. Arrows + Enter + Esc |
+| **Toast** | Success/error flashes after claiming, raising, or sending an enquiry |
+| **Dialog** | Confirmation before any payment, showing the exact amount |
+| **Empty** | Empty boards, unclaimed categories, no enquiries, no search results |
+| **Alert** | Form errors and demo-mode notices |
+| **Tooltip** | Explains "AI visibility" and "cost per enquiry" |
+| **Breadcrumb / Kbd / Spinner / Skeleton / Copy** | Navigation, keyboard hints, button loading states |
+
+Add a field: `UI.field({ label, name, type, desc, required, prefix, options })`.
+Fire a toast client-side: `toast({ title, description, type })`. Server-side: redirect with `?flash=`.

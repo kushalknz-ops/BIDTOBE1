@@ -63,19 +63,28 @@ app.post('/submit', writeLimit, (req, res) => {
   try {
     const l = D.createListing(S.pick(req.body, ['name', 'url', 'tagline', 'category', 'city', 'phone', 'email', 'amount']));
     S.grantOwnership(req, res, l.id);                      // FIX: submitter owns the dashboard
-    res.redirect('/business/' + l.slug);
+    const rank = D.rankOf(l.id, { category: l.category, city: l.city });
+    res.redirect('/business/' + l.slug + '?flash=' + encodeURIComponent(`You are #${rank} in ${D.catName(l.category)} \u00b7 ${l.city}`)
+      + '&flashDesc=' + encodeURIComponent('Your listing is live. Analytics are in your dashboard.'));
   }
   catch (e) { res.status(400).send(V.submit(e.message, req.body)); }
 });
 app.get('/raise/:id', (req, res) => { const l = byId(req.params.id); if (!l) return notFound(res); res.send(V.raise(l, null)); });
 app.post('/raise/:id', writeLimit, (req, res) => {
   const l = byId(req.params.id); if (!l) return notFound(res);
-  try { D.addBid(l.id, req.body.amount); S.grantOwnership(req, res, l.id); res.redirect('/business/' + l.slug); }
+  try {
+    D.addBid(l.id, req.body.amount); S.grantOwnership(req, res, l.id);
+    const rank = D.rankOf(l.id, { category: l.category, city: l.city });
+    res.redirect('/business/' + l.slug + '?flash=' + encodeURIComponent(`Raised \u2014 now #${rank} in ${D.catName(l.category)}`)
+      + '&flashDesc=' + encodeURIComponent('Rank updates instantly. Anyone can outbid you.'));
+  }
   catch (e) { res.status(400).send(V.raise(l, e.message)); }
 });
 app.get('/takeover', (_, res) => res.send(V.takeover(null)));
 app.post('/takeover', writeLimit, (req, res) => {
-  try { D.buyTakeover(req.body.listingId, req.body.amount); res.redirect('/'); }
+  try { D.buyTakeover(req.body.listingId, req.body.amount);
+    res.redirect('/?flash=' + encodeURIComponent(`Takeover live for ${D.RULES.TAKEOVER_HOURS} hours`)
+      + '&flashDesc=' + encodeURIComponent('Your business owns the banner on every page.')); }
   catch (e) { res.status(400).send(V.takeover(e.message)); }
 });
 
@@ -84,9 +93,8 @@ app.post('/lead/:id', writeLimit, (req, res) => {
   const l = byId(req.params.id); if (!l) return notFound(res);
   try { D.addLead(l.id, req.body); } catch (e) { return res.status(400).send(V.layout('Error', `<div class="wrap"><h1>Could not send</h1><p class="sub">${V.esc(e.message)}</p><p><a class="btn" href="/business/${l.slug}">Back</a></p></div>`)); }
   D.track('lead', l.id);
-  res.send(V.layout('Enquiry sent', `<div class="wrap"><h1>Enquiry sent ✅</h1>
-    <p class="sub">${V.esc(l.name)} has your details and will be in touch.</p>
-    <p><a class="btn" href="/">Back to the leaderboard</a></p></div>`));
+  res.redirect('/business/' + l.slug + '?flash=' + encodeURIComponent('Enquiry sent to ' + l.name)
+    + '&flashDesc=' + encodeURIComponent('They have your details and will be in touch.'));
 });
 
 // FIX (CRITICAL): dashboard shows customer enquiries — owner-only
