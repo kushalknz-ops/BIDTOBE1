@@ -1,4 +1,4 @@
-// NZRank visual system — adapted from the Kage design language (MengTo/kage).
+// BIDTOBE1 visual system — adapted from the Kage design language (MengTo/kage).
 // Near-black ground, bone type, vermilion accent. Editorial, restrained, no glassmorphism.
 module.exports.CSS = `
 :root{
@@ -68,8 +68,11 @@ h1,h2,h3{font-weight:400;margin:0;letter-spacing:-.005em}
 header{position:sticky;top:0;z-index:60;border-bottom:1px solid var(--line-soft);
   background:rgba(5,7,10,.78);backdrop-filter:blur(18px)}
 .nav{max-width:1180px;margin:0 auto;padding:0 var(--pad);height:74px;display:flex;align-items:center;gap:clamp(14px,2vw,30px)}
-.logo{font-size:14px;font-weight:500;letter-spacing:.32em;text-transform:uppercase;color:var(--bone)}
+.logo{display:inline-flex;align-items:center;gap:10px;font-size:14px;font-weight:600;letter-spacing:.26em;
+  text-transform:uppercase;color:var(--bone);white-space:nowrap}
+.logo img{width:26px;height:26px;object-fit:contain;flex:none;filter:drop-shadow(0 0 12px rgba(224,35,28,.4))}
 .logo i{font-style:normal;color:var(--vermilion)}
+@media(max-width:640px){.logo span{display:none}.logo img{width:28px;height:28px}}
 .nav a.link{font-size:10px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
   transition:color .4s var(--ease);position:relative;padding:6px 0}
 .nav a.link:hover{color:var(--bone)}
@@ -98,7 +101,9 @@ header{position:sticky;top:0;z-index:60;border-bottom:1px solid var(--line-soft)
 
 /* ---------- hero ---------- */
 .hero{padding:clamp(48px,11vh,120px) 0 clamp(30px,6vh,60px);border-bottom:1px solid var(--line-soft)}
-.hero .h-hero{margin:22px 0 0;max-width:15ch}
+.hero .h-hero{margin:18px 0 0;max-width:15ch}
+.hero-mark{display:block;width:clamp(64px,7vw,104px);height:auto;object-fit:contain;margin:24px 0 4px;
+  filter:drop-shadow(0 0 34px rgba(224,35,28,.32))}
 .hero-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(28px,5vw,84px);
   align-items:end;margin-top:clamp(30px,6vh,58px)}
 @media(max-width:860px){.hero-grid{grid-template-columns:1fr}}

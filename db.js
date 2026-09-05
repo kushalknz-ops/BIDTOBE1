@@ -1,4 +1,4 @@
-// NZRank datastore. JSON file now; swap for Supabase/Postgres later (same function names).
+// BIDTOBE1 datastore. JSON file now; swap for Supabase/Postgres later (same function names).
 const fs = require('fs');
 const S = require('./security');
 const path = require('path');

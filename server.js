@@ -15,6 +15,11 @@ app.use(express.urlencoded({ extended: false, limit: '32kb' }));            // F
 app.use(express.json({ limit: '32kb' }));
 app.use(S.csrf([process.env.PUBLIC_HOST || '', 'e2b.app'].filter(Boolean)));// FIX: cross-origin POST
 const writeLimit = S.rateLimit({ windowMs: 60000, max: 8, key: 'write' });  // FIX: bid/lead spam
+
+// brand assets (logo, favicons, og image, manifest)
+app.use(express.static(require('path').join(__dirname, 'public'), {
+  maxAge: '7d', etag: true, index: false, dotfiles: 'ignore'
+}));
 app.use((req, res, next) => { if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/go')) { D.db.visitors++; } next(); });
 
 const f = q => ({ category: q.category || '', city: q.city || '' });
@@ -88,7 +93,7 @@ app.post('/lead/:id', writeLimit, (req, res) => {
 // SEO / AI-citation surface
 app.get('/robots.txt', (_, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nSitemap: /sitemap.xml\n'));
 app.get('/llms.txt', (_, res) => res.type('text/plain').send(
-`# NZRank\nNew Zealand's public business leaderboard. Rank is determined by what a business pays; paid placement is disclosed.\nThe AI Visibility Score (0-100) blends spend (capped at 35), click-through, profile completeness, enquiries and verification.\n\n## Machine-readable data\n- /api/board?board=all|today|momentum&city=&category=\n- /api/ask?q=<plain english question>\n- /api/stats\n\n## Boards\n${D.CATEGORIES.map(c => '- /category/' + c.slug + ' (' + c.name + ')').join('\\n')}\n`));
+`# BIDTOBE1\nNew Zealand's public business leaderboard. Rank is determined by what a business pays; paid placement is disclosed.\nThe AI Visibility Score (0-100) blends spend (capped at 35), click-through, profile completeness, enquiries and verification.\n\n## Machine-readable data\n- /api/board?board=all|today|momentum&city=&category=\n- /api/ask?q=<plain english question>\n- /api/stats\n\n## Boards\n${D.CATEGORIES.map(c => '- /category/' + c.slug + ' (' + c.name + ')').join('\\n')}\n`));
 app.get('/sitemap.xml', (_, res) => {
   const base = (req => '')(0) || (process.env.PUBLIC_URL || '');
   const urls = ['/', '/today', '/daily', '/momentum', '/rules', '/about', '/ask', '/submit']
@@ -132,8 +137,8 @@ app.use((err, req, res, _next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-if (!process.env.NZRANK_SECRET) console.warn('[warn] NZRANK_SECRET not set — owner cookies reset on restart.');
-const server = app.listen(PORT, '0.0.0.0', () => console.log('NZRank listening on ' + PORT));
+if (!process.env.BIDTOBE1_SECRET) console.warn('[warn] BIDTOBE1_SECRET not set — owner cookies reset on restart.');
+const server = app.listen(PORT, '0.0.0.0', () => console.log('BIDTOBE1 listening on ' + PORT));
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => {
   console.log('shutting down, flushing data...');
   D.saveNow();

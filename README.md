@@ -1,10 +1,10 @@
-# NZRank — pay-to-rank board for NZ businesses (running MVP)
+# BIDTOBE1 — pay-to-rank board for NZ businesses (running MVP)
 
 Built after auditing the live outbid.lol. Same section architecture, our own brand/copy/code, plus additions they don't have.
 
 ## Run
 ```
-cd nzrank && npm install && node server.js   # http://localhost:3000
+cd bidtobe1 && npm install && node server.js   # http://localhost:3000
 ```
 Delete `data.json` to start from empty.
 
@@ -12,7 +12,7 @@ Delete `data.json` to start from empty.
 
 ## Part 1 — What outbid.lol actually has (audited from the live site)
 
-| Their section | Detail | In NZRank? |
+| Their section | Detail | In BIDTOBE1? |
 |---|---|---|
 | Hero "Claim #1 for $X" with inline bid widget | Live price to take #1, category picker, one-click claim | ✅ `/` hero, price recalculates per city+category filter |
 | Top-3 podium cards | Big favicon, bid, description, "claim this rank for $X" | ✅ |
@@ -40,7 +40,7 @@ Delete `data.json` to start from empty.
 
 ---
 
-## Part 2 — What NZRank adds that makes the model more interesting
+## Part 2 — What BIDTOBE1 adds that makes the model more interesting
 
 These are the answers to "can we make this more interesting" — each one attacks a specific weakness above.
 
@@ -66,7 +66,7 @@ These are the answers to "can we make this more interesting" — each one attack
 - **Free seeded listings for real businesses** — solves the cold start; a board of 500 real Auckland firms is worth bidding into, an empty one isn't.
 - **Head-to-head compare pages** ("Company A vs Company B") — pure SEO/AI-citation surface.
 - **Pro subscription $49/mo** — analytics, competitor tracking, review monitoring.
-- **Your AI agents as an upsell** — receptionist/sales/review agents billed on top of the listing. This is where NZRank stops being a directory and becomes your distribution channel for the agency.
+- **Your AI agents as an upsell** — receptionist/sales/review agents billed on top of the listing. This is where BIDTOBE1 stops being a directory and becomes your distribution channel for the agency.
 
 ---
 
@@ -74,7 +74,7 @@ These are the answers to "can we make this more interesting" — each one attack
 `node pentest.js` — 26 live attacks (XSS, IDOR, open redirect, CSRF, mass assignment, bid manipulation, prototype pollution, path traversal, flooding, headers). **Currently 26/26 passing.** First run found 1 critical + 2 high + 4 medium + 3 low; all fixed in `security.js`. Full report: **SECURITY.md**.
 
 ## Marketing
-**MARKETING.md** — go-to-market for NZRank (seed one Auckland board free → manufacture the first bidding war → programmatic SEO + AI-citation) and the "you won #1" pack for the business at the top.
+**MARKETING.md** — go-to-market for BIDTOBE1 (seed one Auckland board free → manufacture the first bidding war → programmatic SEO + AI-citation) and the "you won #1" pack for the business at the top.
 
 ## Files
 - `security.js` — URL sanitisation, money validation, HMAC owner auth, rate limiting, CSRF, headers, moderation.
@@ -95,7 +95,7 @@ These are the answers to "can we make this more interesting" — each one attack
 5. Consider a merchant of record (Polar/Paddle) — they handle GST and global tax; outbid used Polar for exactly this.
 
 ## Before launch
-- Trademark/domain/company check the final name (IPONZ Trade Mark Check + Companies Register). "NZRank" is a placeholder.
+- Trademark/domain/company check the final name (IPONZ Trade Mark Check + Companies Register). "BIDTOBE1" is a placeholder.
 - Terms: payments final, rank not guaranteed, right to remove listings.
 - Fair Trading Act: paid placement must be obvious on every screen — it's in the ticker, hero, rules and footer. Don't publish testimonials you can't evidence (the `/about` ones are labelled placeholders).
 - Seed one category (Auckland AI & Automation) with 20–30 real free listings before opening bidding.

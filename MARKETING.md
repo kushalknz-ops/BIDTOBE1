@@ -1,16 +1,16 @@
-# NZRank — marketing playbook
+# BIDTOBE1 — marketing playbook
 
-Two jobs, and they are different. **(A)** market NZRank itself. **(B)** deliver results for the business sitting at #1 — because their screenshot is your entire ad budget.
+Two jobs, and they are different. **(A)** market BIDTOBE1 itself. **(B)** deliver results for the business sitting at #1 — because their screenshot is your entire ad budget.
 
 ---
 
-# PART A — Marketing NZRank
+# PART A — Marketing BIDTOBE1
 
 ## The one strategic truth
 
 A paid leaderboard has a **two-sided cold start**: bidders won't pay without spectators, spectators won't come without bids. Outbid solved it with a viral launch moment and had ~10 clones within 24 hours. You cannot out-viral them from New Zealand. **You win on depth in one vertical, not spectacle.**
 
-So: **do not launch NZRank nationally. Launch one board.**
+So: **do not launch BIDTOBE1 nationally. Launch one board.**
 
 > **#1 AI & Automation Agency — Auckland**
 
@@ -69,7 +69,7 @@ A one-off $50 bid is a bad business. These make it recurring:
 - **Outbid alerts** → email + SMS the moment someone passes them.
 - **Auto-defend** → "hold my #1 up to $500/mo", card on file. Converts bidding wars into subscription revenue. **Highest-leverage unbuilt feature.**
 - **Monthly rank report** → "You were #2 for 19 days, got 340 clicks, 12 enquiries, cost per enquiry $7.10." Attaches your product to their revenue.
-- **Momentum board decay** → already built. Old spend expires, so staying #1 requires paying again. This is the mechanic that makes NZRank a subscription instead of a one-off.
+- **Momentum board decay** → already built. Old spend expires, so staying #1 requires paying again. This is the mechanic that makes BIDTOBE1 a subscription instead of a one-off.
 
 ## Launch-week checklist
 
@@ -118,7 +118,7 @@ The moment someone takes #1, auto-email them:
 
 **2. Match the landing page to the board.** Their listing promised one thing; the homepage must repeat it above the fold. Biggest single conversion leak.
 
-**3. Take the screenshot.** Give them a pre-rendered "🥇 #1 AI Agency in Auckland — NZRank" image, sized for LinkedIn, plus draft copy. Their post markets them *and* you.
+**3. Take the screenshot.** Give them a pre-rendered "🥇 #1 AI Agency in Auckland — BIDTOBE1" image, sized for LinkedIn, plus draft copy. Their post markets them *and* you.
 
 **4. Put the badge on their site.** Embeddable, links back. Backlink for you, trust signal for them.
 

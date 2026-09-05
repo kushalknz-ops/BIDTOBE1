@@ -1,7 +1,7 @@
-// NZRank security layer — remediations for every pentest finding.
+// BIDTOBE1 security layer — remediations for every pentest finding.
 const crypto = require('crypto');
 
-const SECRET = process.env.NZRANK_SECRET || crypto.randomBytes(32).toString('hex');
+const SECRET = process.env.BIDTOBE1_SECRET || crypto.randomBytes(32).toString('hex');
 
 // --- FIX (HIGH): URL sanitisation — blocks javascript:, data:, protocol-relative open redirects ---
 const BAD_SCHEME = /^\s*(javascript|data|vbscript|file|blob|about):/i;

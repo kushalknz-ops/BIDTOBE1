@@ -1,5 +1,5 @@
 # fly.toml — Sydney region, closest to New Zealand
-app = "nzrank"
+app = "bidtobe1"
 primary_region = "syd"
 
 [build]
@@ -11,7 +11,7 @@ primary_region = "syd"
   PORT = "3000"
 
 [[mounts]]
-  source = "nzrank_data"
+  source = "bidtobe1_data"
   destination = "/data"
 
 [http_service]

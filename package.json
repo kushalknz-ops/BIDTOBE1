@@ -1,7 +1,7 @@
 {
-  "name": "nzrank",
+  "name": "bidtobe1",
   "version": "1.0.0",
-  "description": "NZRank — New Zealand's public pay-to-rank business leaderboard.",
+  "description": "BIDTOBE1 — New Zealand's public pay-to-rank business leaderboard.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

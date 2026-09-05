@@ -23,10 +23,16 @@ function layout(title, body, active = '', head = '') {
   return `<!doctype html><html lang="en-NZ"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)}</title>
-<meta name="description" content="NZRank — New Zealand's public business leaderboard. Rank is what you pay.">
+<meta name="description" content="BIDTOBE1 — New Zealand's public business leaderboard. Rank is what you pay.">
 <meta property="og:title" content="${esc(title)}"><meta property="og:type" content="website">
 <meta property="og:description" content="New Zealand's public business leaderboard. Rank is what you pay.">
 <meta name="twitter:card" content="summary_large_image"><meta name="robots" content="index,follow">
+<meta property="og:image" content="/og.png"><meta name="twitter:image" content="/og.png">
+<meta property="og:site_name" content="BIDTOBE1"><meta name="theme-color" content="#05070a">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="manifest" href="/site.webmanifest">
 ${head}<style>${THEME.CSS}</style></head><body>
 <a class="skip" href="#main">Skip to content</a>
 <div class="ticker">
@@ -44,7 +50,8 @@ ${head}<style>${THEME.CSS}</style></head><body>
 </nav></header>
 <div class="page">${body}</div>
 <footer>
-  <div class="eyebrow" style="justify-content:center;margin-bottom:18px"><span class="dot"></span> Rank is what you pay — nothing else</div>
+  <img src="/logo-mark.png" alt="BIDTOBE1" width="46" height="46" style="opacity:.9;margin-bottom:18px">
+  <div class="eyebrow" style="justify-content:center;margin-bottom:18px"><span class="dot"></span> One more bid. Be #1.</div>
   <div class="fl"><a href="/rules">Rules</a><a href="/about">About</a><a href="/ask">AI Search</a><a href="/submit">Claim</a></div>
   <div class="fl" style="margin-top:20px;color:#4a534d">Paid placement · listings are advertisements, not editorial rankings · demo payments</div>
 </footer>
@@ -137,10 +144,11 @@ function board(kind, f, extra = {}) {
       blurb: `Only the last ${D.RULES.DECAY_DAYS} days count. Old spend decays, so the board can never go stale.` }
   }[kind];
   const rest = cfg.list.slice(3);
-  return layout(cfg.title + ' · NZRank', `
+  return layout(cfg.title + ' · BIDTOBE1', `
   <section class="hero"><div class="wrap" id="main" style="padding-bottom:0">
     <div class="eyebrow" data-rv="fade"><span class="dot"></span> Chapter 00 — New Zealand's public board</div>
-    <h1 class="display h-hero">${words('Rank is what')} <span class="vermilion">${words('you pay.')}</span></h1>
+    <img class="hero-mark" src="/logo-mark.png" alt="" width="104" height="104" data-rv="fade">
+    <h1 class="display h-hero">${words('One more bid.')} <span class="vermilion">${words('Be #1.')}</span></h1>
     <div class="hero-grid">
       <div><p class="body-lg" data-rv="up" data-d="2" style="max-width:46ch">Every business here has paid to stand where it stands.
         Nothing is editorial, nothing is an algorithm. Bid to sit above your competitors in your city and your trade —
@@ -196,7 +204,7 @@ function board(kind, f, extra = {}) {
 function categoryPage(cat, f) {
   const fl = { category: cat.slug, ...(f.city ? { city: f.city } : {}) };
   const list = D.allTime(fl);
-  return layout(cat.name + ' · NZRank', `<div class="wrap" id="main">
+  return layout(cat.name + ' · BIDTOBE1', `<div class="wrap" id="main">
     <div style="padding-top:clamp(40px,8vh,90px)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> Category board</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:16ch">${words('Best ' + cat.name + (f.city ? ' in ' + f.city : ' in New Zealand'))}</h1>
@@ -217,7 +225,7 @@ function profile(l) {
   const catCount = D.allTime({ category: l.category }).length, total = D.allTime().length;
   const also = D.allTime({ category: l.category }).filter(x => x.id !== l.id).slice(0, 5);
   const onToday = D.todayBoard().some(x => x.id === l.id);
-  return layout(`${l.name} · #${overall} on NZRank`, `<div class="wrap" id="main">
+  return layout(`${l.name} · #${overall} on BIDTOBE1`, `<div class="wrap" id="main">
     <div style="padding-top:clamp(36px,7vh,80px)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> <a href="/">Board</a> · <a href="/category/${l.category}">${esc(D.catName(l.category))}</a></div>
       <div style="display:flex;gap:20px;align-items:flex-start;margin-top:24px">
@@ -266,7 +274,7 @@ function profile(l) {
           <label>Phone<input name="phone"></label>
           <label>What do you need?<textarea name="message" rows="3" placeholder="e.g. AI receptionist for a six-person clinic in Auckland"></textarea></label>
           <button class="btn verm" style="margin-top:24px">Send enquiry ${ARROW}</button>
-          <div class="note">Goes straight to the business. NZRank never sells your details.</div>
+          <div class="note">Goes straight to the business. BIDTOBE1 never sells your details.</div>
         </form>
       </div>
       <div style="padding-top:clamp(56px,9vh,110px)">
@@ -284,7 +292,7 @@ function profile(l) {
       telephone: l.phone || undefined, email: l.email || undefined,
       address: { '@type': 'PostalAddress', addressLocality: l.city, addressCountry: 'NZ' } },
     { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: [
-      { '@type': 'Question', name: `What rank does ${l.name} hold on NZRank?`, acceptedAnswer: { '@type': 'Answer',
+      { '@type': 'Question', name: `What rank does ${l.name} hold on BIDTOBE1?`, acceptedAnswer: { '@type': 'Answer',
         text: `${l.name} has committed $${l.total} to rank #${inCat} of ${catCount} in ${D.catName(l.category)} and #${overall} of ${total} overall.` } },
       { '@type': 'Question', name: `How do I outrank ${l.name}?`, acceptedAnswer: { '@type': 'Answer',
         text: `Anyone can take this rank for $${l.total + D.RULES.TOP_STEP} on the ${D.catName(l.category)} board.` } },
@@ -294,7 +302,7 @@ function profile(l) {
 }
 
 function submit(err, v = {}) {
-  return layout('Claim a rank · NZRank', `<div class="wrap" id="main">
+  return layout('Claim a rank · BIDTOBE1', `<div class="wrap" id="main">
     <div style="padding-top:clamp(40px,8vh,90px)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> Chapter 01 — The claim</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:14ch">${words('Take your place on the board.')}</h1>
@@ -352,7 +360,7 @@ function raise(l, err) {
 
 function takeover(err) {
   const list = D.allTime(), need = Math.max(D.RULES.MIN_BID, (list[0]?.total || 0) * D.RULES.TAKEOVER_MULTIPLE);
-  return layout('Homepage takeover · NZRank', `<div class="wrap" id="main">
+  return layout('Homepage takeover · BIDTOBE1', `<div class="wrap" id="main">
     <div style="padding-top:clamp(40px,8vh,90px)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> Chapter 02 — The takeover</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:14ch">${words('Skip the queue entirely.')}</h1>
@@ -371,12 +379,12 @@ function takeover(err) {
 
 function rules() {
   const R = D.RULES;
-  return layout('Rules · NZRank', `<div class="wrap" id="main">
+  return layout('Rules · BIDTOBE1', `<div class="wrap" id="main">
     <div style="padding-top:clamp(40px,8vh,90px)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> The manifesto</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:12ch">${words('One rule runs every board.')}</h1>
       <p class="body-lg" data-rv="up" data-d="2" style="max-width:54ch;margin-top:24px">
-        NZRank is a public leaderboard for New Zealand businesses. No ads, no algorithm, no editorial score deciding position.
+        BIDTOBE1 is a public leaderboard for New Zealand businesses. No ads, no algorithm, no editorial score deciding position.
         You pay to stand above everyone else. Rank is what you pay — nothing else.</p>
     </div>
     ${secHead(1, 'The boards', '盤面')}
@@ -419,12 +427,12 @@ function rules() {
 
 function about() {
   const s = D.stats();
-  return layout('About · NZRank', `<div class="wrap" id="main">
+  return layout('About · BIDTOBE1', `<div class="wrap" id="main">
     <div style="padding-top:clamp(40px,8vh,90px)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> About</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:13ch">${words('A public board, honestly priced.')}</h1>
       <p class="body-lg" data-rv="up" data-d="2" style="max-width:54ch;margin-top:24px">
-        NZRank is a leaderboard for New Zealand businesses: no ads, no API keys, no revenue sharing. Claim #1 in your city
+        BIDTOBE1 is a leaderboard for New Zealand businesses: no ads, no API keys, no revenue sharing. Claim #1 in your city
         and your trade — that is it. Then we add the part a pure bid board does not have: real profiles, tracked enquiries,
         and an AI Visibility Score that money cannot fully buy.</p>
     </div>
@@ -452,7 +460,7 @@ function about() {
 }
 
 function ask(q, results) {
-  return layout('Ask · NZRank', `<div class="wrap" id="main">
+  return layout('Ask · BIDTOBE1', `<div class="wrap" id="main">
     <div style="padding-top:clamp(40px,8vh,90px)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> AI search</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:14ch">${words('Ask for a business.')}</h1>
@@ -474,7 +482,7 @@ function ask(q, results) {
 
 function dashboard(l, owned = []) {
   if (!l) {
-    return layout('Dashboard · NZRank', `<div class="wrap" id="main">
+    return layout('Dashboard · BIDTOBE1', `<div class="wrap" id="main">
       <div style="padding-top:clamp(40px,8vh,90px)">
         <div class="eyebrow" data-rv="fade"><span class="dot"></span> Private</div>
         <h1 class="display h-page" style="margin-top:20px;max-width:14ch">${words('Your listings.')}</h1>

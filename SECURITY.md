@@ -1,4 +1,4 @@
-# NZRank — security audit & remediation report
+# BIDTOBE1 — security audit & remediation report
 
 Attack suite: `node pentest.js [baseUrl]` — 26 live attacks against the running server.
 
@@ -55,7 +55,7 @@ PASS [LOW] No stack traces, nosniff, Referrer-Policy, X-Powered-By hidden
 5. **Privacy Act 2020** — leads are personal information: publish a privacy policy, state retention, offer deletion, and have a breach plan (IPONZ/OPC notification within 72h of a notifiable breach).
 6. **Real auth** — the signed cookie is right for an MVP; move to magic-link or OAuth before you have paying customers with money at stake.
 7. **Backups** — `data.json` has no durability. Postgres + point-in-time recovery before launch.
-8. **Dependency + secret scanning** — `npm audit`, Dependabot, and set `NZRANK_SECRET` from the environment (it currently regenerates on restart, which invalidates ownership cookies).
+8. **Dependency + secret scanning** — `npm audit`, Dependabot, and set `BIDTOBE1_SECRET` from the environment (it currently regenerates on restart, which invalidates ownership cookies).
 
 ## Re-run the audit
 

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: nzrank
+    name: bidtobe1
     runtime: node
     plan: starter          # 'free' also works, but free instances sleep and the disk is not persistent
     region: singapore      # closest Render region to New Zealand
@@ -11,13 +11,13 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: NZRANK_SECRET
+      - key: BIDTOBE1_SECRET
         generateValue: true   # Render generates and stores a strong secret
       - key: DATA_DIR
         value: /var/data
       - key: PUBLIC_URL
         sync: false           # set to https://your-domain after first deploy
     disk:
-      name: nzrank-data       # persists data.json across deploys and restarts
+      name: bidtobe1-data       # persists data.json across deploys and restarts
       mountPath: /var/data
       sizeGB: 1

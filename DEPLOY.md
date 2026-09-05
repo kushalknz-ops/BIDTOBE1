@@ -1,4 +1,4 @@
-# Deploying NZRank
+# Deploying BIDTOBE1
 
 Everything is configured. Pick **one** host, run the commands, and you get a permanent HTTPS URL.
 
@@ -9,13 +9,13 @@ Everything is configured. Pick **one** host, run the commands, and you get a per
 ## Step 0 — Push to GitHub (needed for Render/Railway)
 
 ```bash
-cd nzrank
+cd bidtobe1
 git init
 git add -A
-git commit -m "NZRank MVP"
-gh repo create nzrank --private --source=. --push
+git commit -m "BIDTOBE1 MVP"
+gh repo create bidtobe1 --private --source=. --push
 # no gh CLI? make an empty repo on github.com, then:
-# git remote add origin https://github.com/YOURNAME/nzrank.git && git push -u origin main
+# git remote add origin https://github.com/YOURNAME/bidtobe1.git && git push -u origin main
 ```
 
 `data.json` and `.env` are gitignored — your board data and secrets never leave your machine.
@@ -25,9 +25,9 @@ gh repo create nzrank --private --source=. --push
 ## Option A — Render (easiest)
 
 1. Go to **render.com** → New → **Blueprint** → connect your repo.
-2. Render reads `render.yaml` and configures everything: build, start command, `/healthz`, a 1GB persistent disk at `/var/data`, and it auto-generates `NZRANK_SECRET`.
+2. Render reads `render.yaml` and configures everything: build, start command, `/healthz`, a 1GB persistent disk at `/var/data`, and it auto-generates `BIDTOBE1_SECRET`.
 3. Click **Apply**. First deploy takes ~2 minutes.
-4. You get `https://nzrank.onrender.com`.
+4. You get `https://bidtobe1.onrender.com`.
 5. Seed the demo data: Render dashboard → your service → **Shell** → `npm run seed`.
 6. Set `PUBLIC_URL` to your final URL (Environment tab) so `sitemap.xml` emits absolute links.
 
@@ -38,10 +38,10 @@ gh repo create nzrank --private --source=. --push
 ```bash
 curl -L https://fly.io/install.sh | sh
 fly auth signup
-cd nzrank
-fly launch --no-deploy --copy-config --name nzrank   # reads fly.toml
-fly volumes create nzrank_data --region syd --size 1
-fly secrets set NZRANK_SECRET=$(openssl rand -hex 32)
+cd bidtobe1
+fly launch --no-deploy --copy-config --name bidtobe1   # reads fly.toml
+fly volumes create bidtobe1_data --region syd --size 1
+fly secrets set BIDTOBE1_SECRET=$(openssl rand -hex 32)
 fly deploy
 fly ssh console -C "node /app/seed.js"               # seed demo data
 fly open
@@ -56,7 +56,7 @@ railway login
 railway init
 railway up
 railway domain                                        # generates the public URL
-railway variables set NZRANK_SECRET=$(openssl rand -hex 32) DATA_DIR=/data
+railway variables set BIDTOBE1_SECRET=$(openssl rand -hex 32) DATA_DIR=/data
 ```
 Then add a Volume mounted at `/data` in the Railway dashboard, or your data resets each deploy.
 
@@ -65,10 +65,10 @@ Then add a Volume mounted at `/data` in the Railway dashboard, or your data rese
 ```bash
 ssh root@your-server
 apt update && apt install -y nodejs npm nginx certbot python3-certbot-nginx
-git clone https://github.com/YOURNAME/nzrank.git && cd nzrank
+git clone https://github.com/YOURNAME/bidtobe1.git && cd bidtobe1
 npm ci --omit=dev && npm run seed
 npm i -g pm2
-NZRANK_SECRET=$(openssl rand -hex 32) pm2 start server.js --name nzrank
+BIDTOBE1_SECRET=$(openssl rand -hex 32) pm2 start server.js --name bidtobe1
 pm2 save && pm2 startup
 ```
 Then reverse-proxy port 3000 with nginx and run `certbot --nginx -d yourdomain.co.nz`.
@@ -82,7 +82,7 @@ Then reverse-proxy port 3000 with nginx and run `certbot --nginx -d yourdomain.c
 3. Add that record at your registrar. HTTPS is issued automatically by all three hosts.
 4. Update `PUBLIC_URL` env var to the final domain.
 
-**Do this before you buy:** check the name on the [IPONZ trade mark register](https://app.iponz.govt.nz/app/Extra/IP/TM/QbeCheck) and the [Companies Register](https://companies-register.companiesoffice.govt.nz/). "NZRank" is still a placeholder.
+**Do this before you buy:** check the name on the [IPONZ trade mark register](https://app.iponz.govt.nz/app/Extra/IP/TM/QbeCheck) and the [Companies Register](https://companies-register.companiesoffice.govt.nz/). "BIDTOBE1" is still a placeholder.
 
 ---
 
@@ -90,7 +90,7 @@ Then reverse-proxy port 3000 with nginx and run `certbot --nginx -d yourdomain.c
 
 | Var | Needed | Purpose |
 |---|---|---|
-| `NZRANK_SECRET` | **Yes** | Signs owner cookies. Without it, dashboards log out on every restart. `openssl rand -hex 32` |
+| `BIDTOBE1_SECRET` | **Yes** | Signs owner cookies. Without it, dashboards log out on every restart. `openssl rand -hex 32` |
 | `DATA_DIR` | **Yes** if using a disk | Where `data.json` lives, e.g. `/var/data` or `/data` |
 | `PORT` | Auto | Set by the host |
 | `PUBLIC_URL` | Recommended | Absolute URLs in `sitemap.xml` |
@@ -107,7 +107,7 @@ curl -sI https://your-url | grep -i content-security-policy
 ```
 
 - [ ] `npm run seed` run once
-- [ ] `NZRANK_SECRET` set (check logs for the warning)
+- [ ] `BIDTOBE1_SECRET` set (check logs for the warning)
 - [ ] Persistent disk mounted and `DATA_DIR` pointing at it
 - [ ] Custom domain + HTTPS
 - [ ] `PUBLIC_URL` set, then verify `/sitemap.xml` and `/llms.txt`
