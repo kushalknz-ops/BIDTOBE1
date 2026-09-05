@@ -82,7 +82,7 @@ header{position:sticky;top:0;z-index:60;border-bottom:1px solid var(--line-soft)
   background:rgba(5,7,10,.78);backdrop-filter:blur(18px)}
 .nav{max-width:1180px;margin:0 auto;padding:0 var(--pad);min-height:clamp(62px,8vw,80px);
   display:flex;align-items:center;gap:clamp(12px,1.8vw,26px);position:relative}
-.navlinks{display:flex;align-items:center;gap:clamp(10px,1.4vw,20px);margin-left:auto}
+.navlinks{display:flex;align-items:center;gap:clamp(9px,1.2vw,18px);margin-left:auto;flex-wrap:nowrap}
 .burger{display:none;width:42px;height:42px;margin-left:auto;background:none;border:1px solid var(--line);
   padding:0;cursor:pointer;flex-direction:column;justify-content:center;align-items:center;gap:5px}
 .burger span{display:block;width:16px;height:1px;background:var(--bone);transition:transform .4s var(--ease),opacity .3s}

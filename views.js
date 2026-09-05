@@ -395,10 +395,6 @@ function overallPage() {
     <div style="padding-top:var(--s5)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> All over New Zealand</div>
       <h1 class="display h-page" style="margin-top:16px;max-width:15ch">${words('The highest bid in the country.')}</h1>
-      <p class="body-lg" data-rv="up" data-d="2" style="max-width:56ch;margin-top:20px">
-        Every category runs its own independent auction. This page compares the leading bid from each one
-        and shows the single highest in New Zealand. It is read-only \u2014 nothing here changes what a bid
-        costs inside any category.</p>
     </div>
 
     ${champ ? `
