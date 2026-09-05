@@ -108,16 +108,62 @@ function row(l, i, amount, claimFor, d = 0) {
   </div>`;
 }
 
-function podium(list, amountOf) {
-  return `<div class="podium">${list.slice(0, 3).map((l, i) => `<div class="pod ${i === 0 ? 'p1' : ''}" data-rv="up" data-d="${i * 2}">
-    <div class="pnum">${String(i + 1).padStart(2, '0')}</div>
-    <a href="/business/${l.slug}"><div class="pname">${esc(l.name)}</div></a>
-    <div class="body" style="min-height:3em">${esc(l.tagline)}</div>
-    <div class="pamt">${money(amountOf(l))}</div>
-    <div class="pfoot">
-      <div class="rmeta">${esc(D.catName(l.category))} · ${esc(l.city)} · ${l.clicks.toLocaleString()} clicks</div>
-      <a class="claim" style="display:inline-block;margin-top:14px" href="/raise/${l.id}">Claim this rank → ${money(amountOf(l) + D.RULES.TOP_STEP)}</a>
-    </div></div>`).join('')}</div>`;
+function boardTiers(list, amountOf) {
+  if (!list.length) return '';
+  const step = D.RULES.TOP_STEP;
+  const top = list[0], second = list.slice(1, 3), restTier = list.slice(3);
+
+  // ---- 01 — champion: business details | their advertisement ----
+  const champion = `<article class="t1" data-rv="up">
+    <div class="t1-info">
+      <div class="t1-rank"><span class="t1-num">01</span><span class="t1-lab">New Zealand</span></div>
+      <a href="/business/${top.slug}"><h3 class="t1-name">${esc(top.name)}</h3></a>
+      <div class="t1-badges">${badges(top)}</div>
+      <dl class="t1-dl">
+        <div><dt>Committed</dt><dd class="t1-amt">${money(amountOf(top))}</dd></div>
+        <div><dt>Category</dt><dd><a href="/category/${top.category}">${esc(D.catName(top.category))}</a> · #${D.rankOf(top.id, { category: top.category })}</dd></div>
+        <div><dt>Operating</dt><dd>${esc(top.city)}</dd></div>
+        <div><dt>Clicks sent</dt><dd>${top.clicks.toLocaleString()}</dd></div>
+        ${top.phone ? `<div><dt>Phone</dt><dd>${esc(top.phone)}</dd></div>` : ''}
+      </dl>
+      <a class="claim t1-claim" href="/raise/${top.id}">Take this rank → ${money(amountOf(top) + step)}</a>
+    </div>
+    <div class="t1-ad">
+      <span class="t1-adtag">Their message</span>
+      <p class="t1-pitch">${esc(top.tagline || top.name + ' holds the top rank on BIDTOBE1.')}</p>
+      <div class="t1-actions">
+        <a class="btn" href="/go/${top.id}" target="_blank" rel="nofollow noopener">Visit website ${ARROW}</a>
+        <a class="btn ghost" href="/business/${top.slug}#enquiry">Request a quote</a>
+      </div>
+      <div class="t1-score"><span>Visibility ${D.visibilityScore(top)}/100</span><i style="width:${D.visibilityScore(top)}%"></i></div>
+    </div>
+  </article>`;
+
+  // ---- 02 / 03 ----
+  const pair = second.length ? `<div class="t2">${second.map((l, i) => `<article class="t2-card" data-rv="up" data-d="${i * 2}">
+      <div class="t2-head"><span class="t2-num">${String(i + 2).padStart(2, '0')}</span>
+        <img class="t2-ico" src="${fav(l.url)}" alt="" loading="lazy"></div>
+      <a href="/business/${l.slug}"><h3 class="t2-name">${esc(l.name)}</h3></a>
+      <p class="t2-pitch">${esc(l.tagline)}</p>
+      <div class="t2-foot">
+        <span class="t2-amt">${money(amountOf(l))}</span>
+        <span class="rmeta">${esc(D.catName(l.category))} · ${l.clicks.toLocaleString()} clicks</span>
+        <a class="claim" href="/raise/${l.id}">Take this rank → ${money(amountOf(l) + step)}</a>
+      </div>
+    </article>`).join('')}</div>` : '';
+
+  // ---- 04+ — slim rows ----
+  const rows = restTier.length ? `<div class="t3">${restTier.map((l, i) => `<a class="t3-row" href="/business/${l.slug}" data-rv="up" data-d="${Math.min(i, 8)}">
+      <span class="t3-num">${String(i + 4).padStart(2, '0')}</span>
+      <img class="t3-ico" src="${fav(l.url)}" alt="" loading="lazy">
+      <span class="t3-name">${esc(l.name)}</span>
+      <span class="t3-pitch">${esc(l.tagline)}</span>
+      <span class="t3-meta">${esc(D.catName(l.category))}</span>
+      <span class="t3-amt">${money(amountOf(l))}</span>
+      <span class="t3-claim">${money(amountOf(l) + step)} →</span>
+    </a>`).join('')}</div>` : '';
+
+  return champion + pair + rows;
 }
 
 function secHead(n, title, meta) {
@@ -222,24 +268,19 @@ function board(kind, f, extra = {}) {
     ${filterBar(kind === 'all' ? '/' : '/' + kind, f)}
     ${secHead(cfg.n, cfg.title, cfg.list.length + ' listed')}
     <p class="sec-lede" data-rv="fade">${esc(cfg.blurb)}</p>
-    ${cfg.list.length ? podium(cfg.list, cfg.amt) : ''}
-    <div class="split">
-      <div>
-        ${cfg.list.length
-          ? (rest.length ? `<div class="rows">${rest.map((l, i) => row(l, i + 3, cfg.amt(l), cfg.amt(l) + D.RULES.TOP_STEP, i)).join('')}</div>`
-            : '<div class="panel body">Only the top three so far. The rest of the board is open.</div>')
-          : UI.empty({ icon: '\u25c7', title: 'This board is empty',
-              desc: `Nobody has claimed a rank here yet. The first listing takes #1 for ${money(D.RULES.MIN_BID)} \u2014 and holds it until someone pays more.`,
-              actions: `<a class="btn verm" href="/submit">Take #1 for ${money(D.RULES.MIN_BID)}</a><a class="btn ghost" href="/rules">How it works</a>` })}
-      </div>
-      <div>
-        ${activityFeed()}
-        <div class="panel catlist" style="margin-top:18px" data-rv="up"><div class="eyebrow" style="margin-bottom:14px"><span class="dot"></span> Category boards</div>
-          ${D.CATEGORIES.map(c => `<a href="/category/${c.slug}">${esc(c.name)} <i>${D.allTime({ category: c.slug }).length}</i></a>`).join('')}</div>
-        <div class="panel" style="margin-top:18px" data-rv="up"><div class="eyebrow" style="margin-bottom:14px"><span class="dot"></span> Homepage takeover</div>
-          <p class="body">Pay ${D.RULES.TAKEOVER_MULTIPLE}× the current #1 and own the banner across every page for ${D.RULES.TAKEOVER_HOURS} hours — whatever the board says.</p>
-          <a class="claim" style="display:inline-block;margin-top:14px" href="/takeover">From ${money(Math.max(D.RULES.MIN_BID, (D.allTime()[0]?.total || 0) * D.RULES.TAKEOVER_MULTIPLE))} →</a></div>
-      </div>
+
+    ${cfg.list.length ? boardTiers(cfg.list, cfg.amt)
+      : UI.empty({ icon: '\u25c7', title: 'This board is empty',
+          desc: `Nobody has claimed a rank here yet. The first listing takes #1 for ${money(D.RULES.MIN_BID)} \u2014 and holds it until someone pays more.`,
+          actions: `<a class="btn verm" href="/submit">Take #1 for ${money(D.RULES.MIN_BID)}</a><a class="btn ghost" href="/rules">How it works</a>` })}
+
+    <div class="board-aside">
+      ${activityFeed()}
+      <div class="panel catlist" data-rv="up"><div class="eyebrow" style="margin-bottom:14px"><span class="dot"></span> Category boards</div>
+        ${D.CATEGORIES.map(c => `<a href="/category/${c.slug}">${esc(c.name)} <i>${D.allTime({ category: c.slug }).length}</i></a>`).join('')}</div>
+      <div class="panel" data-rv="up"><div class="eyebrow" style="margin-bottom:14px"><span class="dot"></span> Homepage takeover</div>
+        <p class="body">Pay ${D.RULES.TAKEOVER_MULTIPLE}× the current #1 and own the banner across every page for ${D.RULES.TAKEOVER_HOURS} hours.</p>
+        <a class="claim" style="display:inline-block;margin-top:14px" href="/takeover">From ${money(Math.max(D.RULES.MIN_BID, (D.allTime()[0]?.total || 0) * D.RULES.TAKEOVER_MULTIPLE))} →</a></div>
     </div>
   </div>`, kind, jsonld({
     '@context': 'https://schema.org', '@type': 'ItemList', name: cfg.title, description: cfg.blurb,
@@ -262,7 +303,7 @@ function categoryPage(cat, f) {
 
     </div>
     ${secHead(1, cat.name, null)}
-    ${list.length ? `<div class="rows">${list.map((l, i) => row(l, i, l.total, l.total + D.RULES.TOP_STEP, i)).join('')}</div>`
+    ${list.length ? boardTiers(list, l => l.total)
       : UI.empty({ icon: '\u25c7', title: 'Nobody holds this category',
           desc: `${esc(cat.name)} is completely unclaimed nationwide. Whoever lists first takes #1.`,
           actions: `<a class="btn verm" href="/submit">Claim #1 for ${money(D.RULES.MIN_BID)}</a>` })}
