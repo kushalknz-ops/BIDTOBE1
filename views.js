@@ -122,8 +122,8 @@ function podium(list, amountOf) {
     </div></div>`).join('')}</div>`;
 }
 
-function secHead(n, title, jp) {
-  return `<div class="sec-head" data-rv="fade"><span class="k"><b>${roman(n)}</b> — ${esc(title)}</span><span class="rule"></span><span class="k">${esc(jp)}</span></div>`;
+function secHead(n, title, meta) {
+  return `<div class="sec-head" data-rv="fade"><h2 class="k">${esc(title)}</h2><span class="rule"></span>${meta ? `<span class="k k-meta">${esc(meta)}</span>` : ''}</div>`;
 }
 
 function filterBar(base, f) {
@@ -168,26 +168,33 @@ function activityFeed() {
 // ---------------- board ----------------
 function board(kind, f, extra = {}) {
   const cfg = {
-    all: { list: D.allTime(f), amt: l => l.total, title: 'All-time', jp: '通算', n: 1,
+    all: { list: D.allTime(f), amt: l => l.total, title: 'All-time', n: 1,
+      lede: "New Zealand's public board", head: ['One more bid.', 'Be #1.'],
+      intro: 'Every business here has paid to stand where it stands. Nothing is editorial, nothing is an algorithm. Bid to sit above your competitors in your city and your trade \u2014 and know that anyone can take it back from you at any moment.',
       blurb: 'Everything a business has ever committed. It never expires.' },
-    today: { list: D.todayBoard(f), amt: l => l.windowTotal, title: 'Today', jp: '本日', n: 2,
-      blurb: 'A rolling twenty-four hours. Each payment counts from the moment you pay, then drops away a day later.' },
-    daily: { list: D.dailyBoard(extra.day || D.dayKey(), f), amt: l => l.windowTotal, title: 'Daily · ' + (extra.day || D.dayKey()), jp: '日次', n: 3,
-      blurb: 'A calendar day, New Zealand time. The current day stays live; past days freeze as a permanent archive.' },
-    momentum: { list: D.momentumBoard(f), amt: l => l.windowTotal, title: 'Momentum', jp: '勢い', n: 4,
-      blurb: `Only the last ${D.RULES.DECAY_DAYS} days count. Old spend decays, so the board can never go stale.` }
+    today: { list: D.todayBoard(f), amt: l => l.windowTotal, title: 'Today', n: 2,
+      lede: 'Rolling 24 hours', head: ['Today\u2019s board.'],
+      intro: 'Only what was committed in the last twenty-four hours. Each payment counts from the moment you pay, then drops away a day later \u2014 so this board resets itself continuously.',
+      blurb: 'Ranked by spend in the last twenty-four hours.' },
+    daily: { list: D.dailyBoard(extra.day || D.dayKey(), f), amt: l => l.windowTotal,
+      title: 'Daily \u00b7 ' + (extra.day || D.dayKey()), n: 3,
+      lede: 'Calendar day, New Zealand time', head: ['Daily board.'],
+      intro: 'One calendar day, midnight to midnight. The current day stays live; every past day freezes into a permanent archive you can browse below.',
+      blurb: 'Ranked by spend on this calendar day.' },
+    momentum: { list: D.momentumBoard(f), amt: l => l.windowTotal, title: 'Momentum', n: 4,
+      lede: `Last ${D.RULES.DECAY_DAYS} days`, head: ['Momentum board.'],
+      intro: `Only the last ${D.RULES.DECAY_DAYS} days count. Old spend decays out, so an early whale cannot own this board forever \u2014 staying on top means staying active.`,
+      blurb: `Ranked by spend in the last ${D.RULES.DECAY_DAYS} days.` }
   }[kind];
   const rest = cfg.list.slice(3);
   return layout(cfg.title + ' · BIDTOBE1', `
   <section class="hero"><div class="wrap" id="main" style="padding-bottom:0">
-    <div class="eyebrow" data-rv="fade"><span class="dot"></span> Chapter 00 — New Zealand's public board</div>
-    <img class="hero-mark" src="/logo-mark.png" alt="" width="104" height="104" data-rv="fade">
-    <h1 class="display h-hero">${words('One more bid.')} <span class="vermilion">${words('Be #1.')}</span></h1>
+    <div class="eyebrow" data-rv="fade"><span class="dot"></span> ${esc(cfg.lede)}</div>
+    ${kind === 'all' ? '<img class="hero-mark" src="/logo-mark.png" alt="" width="104" height="104" data-rv="fade">' : ''}
+    <h1 class="display h-hero">${words(cfg.head[0])}${cfg.head[1] ? ` <span class="vermilion">${words(cfg.head[1])}</span>` : ''}</h1>
     <div class="hero-grid">
-      <div><p class="body-lg" data-rv="up" data-d="2" style="max-width:46ch">Every business here has paid to stand where it stands.
-        Nothing is editorial, nothing is an algorithm. Bid to sit above your competitors in your city and your trade —
-        and know that anyone can take it back from you at any moment. That is the whole idea.</p>
-        <div style="display:flex;gap:14px;margin-top:32px;flex-wrap:wrap" data-rv="up" data-d="4">
+      <div><p class="body-lg" data-rv="up" data-d="2" style="max-width:46ch">${esc(cfg.intro)}</p>
+        <div class="hero-cta" data-rv="up" data-d="4">
           <a class="btn" href="/submit">Claim a rank ${ARROW}</a>
           <a class="arrowlink" href="/rules">Read the rules <span class="ar">${ARROW}</span></a>
         </div></div>
@@ -203,10 +210,10 @@ function board(kind, f, extra = {}) {
       <a class="tab ${kind === 'momentum' ? 'on' : ''}" href="/momentum">Momentum</a>
     </div>
     ${filterBar(kind === 'all' ? '/' : '/' + kind, f)}
-    ${secHead(cfg.n, cfg.title + ' — ' + cfg.list.length + ' listed', cfg.jp)}
-    <p class="body-lg" data-rv="fade" style="max-width:52ch;margin:-16px 0 0">${esc(cfg.blurb)}</p>
+    ${secHead(cfg.n, cfg.title, cfg.list.length + ' listed')}
+    <p class="sec-lede" data-rv="fade">${esc(cfg.blurb)}</p>
     ${cfg.list.length ? podium(cfg.list, cfg.amt) : ''}
-    <div class="split" style="margin-top:clamp(30px,5vh,54px)">
+    <div class="split">
       <div>
         ${cfg.list.length
           ? (rest.length ? `<div class="rows">${rest.map((l, i) => row(l, i + 3, cfg.amt(l), cfg.amt(l) + D.RULES.TOP_STEP, i)).join('')}</div>`
@@ -214,7 +221,7 @@ function board(kind, f, extra = {}) {
           : UI.empty({ icon: '\u25c7', title: 'This board is empty',
               desc: `Nobody has claimed a rank here yet. The first listing takes #1 for ${money(D.RULES.MIN_BID)} \u2014 and holds it until someone pays more.`,
               actions: `<a class="btn verm" href="/submit">Take #1 for ${money(D.RULES.MIN_BID)}</a><a class="btn ghost" href="/rules">How it works</a>` })}
-        ${kind === 'daily' ? `${secHead(5, 'Archive', '記録')}<div class="chips">${D.dailyArchive().map(d =>
+        ${kind === 'daily' ? `${secHead(5, 'Archive', null)}<div class="chips">${D.dailyArchive().map(d =>
           `<a class="chip ${d === (extra.day || D.dayKey()) ? 'on' : ''}" href="/daily?day=${d}">${d}</a>`).join('') || '<span class="body">No archived days yet.</span>'}</div>` : ''}
       </div>
       <div>
@@ -239,7 +246,7 @@ function categoryPage(cat, f) {
   const fl = { category: cat.slug, ...(f.city ? { city: f.city } : {}) };
   const list = D.allTime(fl);
   return layout(cat.name + ' · BIDTOBE1', `<div class="wrap" id="main">
-    <div style="padding-top:clamp(40px,8vh,90px)">
+    <div style="padding-top:var(--s5)">
       <div data-rv="fade">${UI.crumb([{ label: 'Board', href: '/' }, { label: cat.name }])}</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:16ch">${words('Best ' + cat.name + (f.city ? ' in ' + f.city : ' in New Zealand'))}</h1>
       <p class="body-lg" data-rv="up" data-d="2" style="max-width:50ch;margin-top:22px">
@@ -247,7 +254,7 @@ function categoryPage(cat, f) {
       <div class="chips" data-rv="fade" style="margin-top:26px">${D.CITIES.map(c =>
         `<a class="chip ${f.city === c ? 'on' : ''}" href="/category/${cat.slug}${f.city === c ? '' : '?city=' + encodeURIComponent(c)}">${esc(c)}</a>`).join('')}</div>
     </div>
-    ${secHead(1, cat.name, '部門')}
+    ${secHead(1, cat.name, null)}
     ${list.length ? `<div class="rows">${list.map((l, i) => row(l, i, l.total, l.total + D.RULES.TOP_STEP, i)).join('')}</div>`
       : UI.empty({ icon: '\u25c7', title: 'Nobody holds this category',
           desc: `${esc(cat.name)}${f.city ? ' in ' + esc(f.city) : ''} is completely unclaimed. Whoever lists first takes #1.`,
@@ -261,7 +268,7 @@ function profile(l) {
   const also = D.allTime({ category: l.category }).filter(x => x.id !== l.id).slice(0, 5);
   const onToday = D.todayBoard().some(x => x.id === l.id);
   return layout(`${l.name} · #${overall} on BIDTOBE1`, `<div class="wrap" id="main">
-    <div style="padding-top:clamp(36px,7vh,80px)">
+    <div style="padding-top:var(--s5)">
       <div data-rv="fade">${UI.crumb([{ label: 'Board', href: '/' },
         { label: D.catName(l.category), href: '/category/' + l.category }, { label: l.name }])}</div>
       <div style="display:flex;gap:20px;align-items:flex-start;margin-top:24px">
@@ -285,7 +292,7 @@ function profile(l) {
     </div>
     <div class="split">
       <div>
-        ${secHead(1, 'About this ranking', '順位')}
+        ${secHead(1, 'About this ranking', null)}
         <div class="q"><h3>What rank does ${esc(l.name)} hold?</h3>
           <p class="body">${esc(l.name)} has committed ${money(l.total)} to rank #${inCat} of ${catCount} in ${esc(D.catName(l.category))}, and #${overall} of ${total} overall.</p></div>
         <div class="q"><h3>Have they ranked today?</h3>
@@ -295,7 +302,7 @@ function profile(l) {
         <div class="q"><h3>Is this an editorial recommendation?</h3>
           <p class="body">No. Rank is paid placement. The AI Visibility Score and the Verified badge are the parts that are never for sale.</p></div>
 
-        ${secHead(2, 'AI visibility score', '評価')}
+        ${secHead(2, 'AI visibility score', null)}
         <div class="panel" data-rv="up">
           ${D.scoreBreakdown(l).map(([k, v, m]) => `<div style="margin:16px 0">
             <div style="display:flex;justify-content:space-between;align-items:baseline">
@@ -304,7 +311,7 @@ function profile(l) {
           <div class="note">Unlike rank, this score cannot be bought outright — committed spend is capped at 35 of 100.</div>
         </div>
 
-        ${secHead(3, 'Request a quote', '問合')}
+        ${secHead(3, 'Request a quote', null)}
         <form class="panel" method="post" action="/lead/${l.id}" id="enquiry" data-rv="up" novalidate>
           ${UI.field({ label: 'Your name', name: 'name', required: true, autocomplete: 'name' })}
           ${UI.field({ label: 'Email', name: 'email', type: 'email', required: true, autocomplete: 'email',
@@ -316,7 +323,7 @@ function profile(l) {
           <div class="field-desc" style="margin-top:14px">Goes straight to ${esc(l.name)}. BIDTOBE1 never sells your details.</div>
         </form>
       </div>
-      <div style="padding-top:clamp(56px,9vh,110px)">
+      <div >
         <div class="panel" data-rv="up"><div class="eyebrow" style="margin-bottom:16px"><span class="dot"></span> Contact</div>
           <div class="k" style="color:var(--muted)">Website</div><a class="body" style="color:var(--bone);display:block;margin-bottom:14px;padding:4px 0;min-height:28px" href="/go/${l.id}">${esc(l.url)}</a>
           ${l.phone ? `<div class="k" style="color:var(--muted)">Phone</div><div class="body" style="color:var(--bone);margin-bottom:14px">${esc(l.phone)}</div>` : ''}
@@ -342,7 +349,7 @@ function profile(l) {
 
 function submit(err, v = {}) {
   return layout('Claim a rank · BIDTOBE1', `<div class="wrap" id="main">
-    <div style="padding-top:clamp(40px,8vh,90px)">
+    <div style="padding-top:var(--s5)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> Chapter 01 — The claim</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:14ch">${words('Take your place on the board.')}</h1>
       <p class="body-lg" data-rv="up" data-d="2" style="max-width:52ch;margin-top:22px">
@@ -395,7 +402,7 @@ function submit(err, v = {}) {
 function raise(l, err) {
   const needTop = D.minToTop(), needCat = D.minToTop({ category: l.category });
   return layout('Raise ' + l.name, `<div class="wrap" id="main">
-    <div style="padding-top:clamp(40px,8vh,90px)">
+    <div style="padding-top:var(--s5)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> Raise a listing</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:16ch">${words(l.name)}</h1>
       <p class="body-lg" data-rv="up" data-d="2" style="margin-top:20px">Currently ${money(l.total)}, sitting at #${D.rankOf(l.id)}. You pay only the difference.</p>
@@ -420,7 +427,7 @@ function raise(l, err) {
 function takeover(err) {
   const list = D.allTime(), need = Math.max(D.RULES.MIN_BID, (list[0]?.total || 0) * D.RULES.TAKEOVER_MULTIPLE);
   return layout('Homepage takeover · BIDTOBE1', `<div class="wrap" id="main">
-    <div style="padding-top:clamp(40px,8vh,90px)">
+    <div style="padding-top:var(--s5)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> Chapter 02 — The takeover</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:14ch">${words('Skip the queue entirely.')}</h1>
       <p class="body-lg" data-rv="up" data-d="2" style="max-width:52ch;margin-top:22px">
@@ -445,14 +452,14 @@ function takeover(err) {
 function rules() {
   const R = D.RULES;
   return layout('Rules · BIDTOBE1', `<div class="wrap" id="main">
-    <div style="padding-top:clamp(40px,8vh,90px)">
+    <div style="padding-top:var(--s5)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> The manifesto</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:12ch">${words('One rule runs every board.')}</h1>
       <p class="body-lg" data-rv="up" data-d="2" style="max-width:54ch;margin-top:24px">
         BIDTOBE1 is a public leaderboard for New Zealand businesses. No ads, no algorithm, no editorial score deciding position.
         You pay to stand above everyone else. Rank is what you pay — nothing else.</p>
     </div>
-    ${secHead(1, 'The boards', '盤面')}
+    ${secHead(1, 'The boards', null)}
     <p class="body-lg" data-rv="fade" style="max-width:54ch;margin-top:-14px">One payment ranks you on every board that includes that spend. The boards simply look at different windows of time.</p>
     <ul class="list" data-rv="up" style="margin-top:26px">
       <li><span><b style="color:var(--bone);font-weight:400">All-time</b> — the main board. Rank is everything you have ever paid for that listing. It does not expire.</span></li>
@@ -461,7 +468,7 @@ function rules() {
       <li><span><b style="color:var(--bone);font-weight:400">Momentum</b> — only the last ${R.DECAY_DAYS} days count. Old spend decays out, so an early whale cannot own the board forever.</span></li>
       <li><span><b style="color:var(--bone);font-weight:400">Category and city</b> — every listing also competes inside its trade and its city, so ${money(50)} can still buy #1 in Hamilton plumbing.</span></li>
     </ul>
-    ${secHead(2, 'How ranking works', '規則')}
+    ${secHead(2, 'How ranking works', null)}
     <ul class="list" data-rv="up">
       <li>New listings are whole New Zealand dollars — ${money(R.MIN_BID)} minimum, ${money(R.MAX_BID)} maximum.</li>
       <li>Taking #1 costs at least ${money(R.TOP_STEP)} more than the current #1. Paying less still puts you on the board at whatever rank that amount can take.</li>
@@ -470,18 +477,18 @@ function rules() {
       <li>Listings are keyed by website, with tracking query strings ignored, so one business cannot occupy two ranks.</li>
       <li>A homepage takeover costs ${R.TAKEOVER_MULTIPLE}× the current #1 and lasts ${R.TAKEOVER_HOURS} hours.</li>
     </ul>
-    ${secHead(3, 'What you can list', '掲載')}
+    ${secHead(3, 'What you can list', null)}
     <ul class="list" data-rv="up">
       <li>A real business website, or an X / LinkedIn profile. Products and profiles only — no chat invites, no link shorteners, no adult content, no scams or unlicensed financial services.</li>
       <li>Listed businesses must show valid company details. We may ask for an NZBN.</li>
       <li>Regulated trades — electrical, gas, building, legal, financial advice — must hold current New Zealand licensing.</li>
     </ul>
-    ${secHead(4, 'Badges are never for sale', '認証')}
+    ${secHead(4, 'Badges are never for sale', null)}
     <p class="body-lg" data-rv="fade" style="max-width:54ch;margin-top:-14px">
       A <span class="badge v">Verified</span> badge means we checked the NZBN and the licensing. An
       <span class="badge e">Editor's pick</span> means a human looked and liked it. Neither can be bought — only position can.
       This is the line that keeps the board worth reading.</p>
-    ${secHead(5, 'After you pay', '決済')}
+    ${secHead(5, 'After you pay', null)}
     <ul class="list" data-rv="up">
       <li>Your listing is public. Clicks go to the URL you submitted, with query parameters stripped.</li>
       <li>A completed payment is what claims the rank. Payments are not refundable and rank is not guaranteed.</li>
@@ -493,7 +500,7 @@ function rules() {
 function about() {
   const s = D.stats();
   return layout('About · BIDTOBE1', `<div class="wrap" id="main">
-    <div style="padding-top:clamp(40px,8vh,90px)">
+    <div style="padding-top:var(--s5)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> About</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:13ch">${words('A public board, honestly priced.')}</h1>
       <p class="body-lg" data-rv="up" data-d="2" style="max-width:54ch;margin-top:24px">
@@ -501,7 +508,7 @@ function about() {
         and your trade — that is it. Then we add the part a pure bid board does not have: real profiles, tracked enquiries,
         and an AI Visibility Score that money cannot fully buy.</p>
     </div>
-    ${secHead(1, 'The board so far', '実績')}
+    ${secHead(1, 'The board so far', null)}
     <div class="stats" data-rv="up">
       <div class="stat"><span>Visitors</span><b>${s.visitors.toLocaleString()}</b></div>
       <div class="stat"><span>Committed</span><b>${money(s.revenue)}</b></div>
@@ -510,7 +517,7 @@ function about() {
       <div class="stat"><span>Clicks sent</span><b>${s.clicks.toLocaleString()}</b></div>
       <div class="stat"><span>Enquiries</span><b>${s.leads.toLocaleString()}</b></div>
     </div>
-    ${secHead(2, 'From those who took #1', '声')}
+    ${secHead(2, 'From those who took #1', null)}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px" data-rv="up">
       <div class="tw"><b>Auckland AI agency</b>Spent $850 to hold #1 in AI &amp; Automation Auckland. Fourteen enquiries in nine days, two became retainers.</div>
       <div class="tw"><b>Christchurch plumber</b>$120 for #1 in my city board. Cheaper than one week of Google Ads, and I can actually see the clicks.</div>
@@ -518,7 +525,7 @@ function about() {
     </div>
     <div class="note" style="margin-top:24px">These are illustrative placeholders for the MVP. Never publish customer results you cannot evidence —
       under the Fair Trading Act, unverified testimonials are a real risk.</div>
-    ${secHead(3, 'The rule', '原則')}
+    ${secHead(3, 'The rule', null)}
     <p class="display h-sec" data-rv="up" style="max-width:16ch">${words('Rank is what you pay.')}</p>
     <p class="body-lg" data-rv="fade" style="max-width:48ch;margin-top:22px">The board is here. Same rules for everyone. Nothing else decides it.</p>
   </div>`, 'about');
@@ -526,7 +533,7 @@ function about() {
 
 function ask(q, results) {
   return layout('Ask · BIDTOBE1', `<div class="wrap" id="main">
-    <div style="padding-top:clamp(40px,8vh,90px)">
+    <div style="padding-top:var(--s5)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> AI search</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:14ch">${words('Ask for a business.')}</h1>
       <p class="body-lg" data-rv="up" data-d="2" style="max-width:52ch;margin-top:22px">
@@ -537,7 +544,7 @@ function ask(q, results) {
         <button class="btn verm">Ask ${ARROW}</button>
       </form>
     </div>
-    ${q ? `${secHead(1, 'Top matches', '結果')}
+    ${q ? `${secHead(1, 'Top matches', null)}
       ${results.length ? `<div class="rows">${results.map((l, i) => row(l, i, l.total, null, i)).join('')}</div>`
         : UI.empty({ icon: '\u25ce', title: 'No matches',
             desc: 'Nothing on the board fits that yet. Try a broader city or category \u2014 or claim the spot yourself.',
@@ -550,13 +557,13 @@ function ask(q, results) {
 function dashboard(l, owned = []) {
   if (!l) {
     return layout('Dashboard · BIDTOBE1', `<div class="wrap" id="main">
-      <div style="padding-top:clamp(40px,8vh,90px)">
+      <div style="padding-top:var(--s5)">
         <div class="eyebrow" data-rv="fade"><span class="dot"></span> Private</div>
         <h1 class="display h-page" style="margin-top:20px;max-width:14ch">${words('Your listings.')}</h1>
         <p class="body-lg" data-rv="up" data-d="2" style="max-width:52ch;margin-top:22px">
           Enquiries and analytics are private to the business that owns the listing. Claim or raise one from this browser to unlock it.</p>
       </div>
-      ${secHead(1, 'Owned by you', '管理')}
+      ${secHead(1, 'Owned by you', null)}
       ${owned.length ? `<div class="rows">${owned.map((x, i) => `<div class="row" data-rv="up" data-d="${i}">
         <div class="rk">${String(D.rankOf(x.id)).padStart(2, '0')}</div>
         <img class="ico" src="${fav(x.url)}" alt="">
@@ -574,7 +581,7 @@ function dashboard(l, owned = []) {
   const leads = D.leadsFor(l.id).slice().reverse();
   const ctr = l.views ? (l.clicks / l.views * 100).toFixed(1) : '0.0';
   return layout('Dashboard · ' + l.name, `<div class="wrap" id="main">
-    <div style="padding-top:clamp(40px,8vh,90px)">
+    <div style="padding-top:var(--s5)">
       <div class="eyebrow" data-rv="fade"><span class="dot"></span> Private dashboard</div>
       <h1 class="display h-page" style="margin-top:20px;max-width:16ch">${words(l.name)}</h1>
       <div style="margin-top:18px" data-rv="fade"><a class="arrowlink" href="/business/${l.slug}">View public profile <span class="ar">${ARROW}</span></a></div>
@@ -589,7 +596,7 @@ function dashboard(l, owned = []) {
       <div class="stat"><span>Cost per click</span><b>${l.clicks ? money(l.total / l.clicks) : '—'}</b></div>
       <div class="stat"><span>${UI.tip('Cost per enquiry', 'Total committed divided by enquiries received. Compare this against your usual cost per lead before raising.')}</span><b>${leads.length ? money(l.total / leads.length) : '\u2014'}</b></div>
     </div>
-    ${secHead(1, 'Recommendations', '助言')}
+    ${secHead(1, 'Recommendations', null)}
     <ul class="list" data-rv="up">
       ${above ? `<li><span><b style="color:var(--bone);font-weight:400">${esc(above.name)}</b> is one place above you on ${money(above.total)}.
         <a class="claim" href="/raise/${l.id}">+${money(above.total - l.total + D.RULES.TOP_STEP)} takes their spot →</a></span></li>`
@@ -603,7 +610,7 @@ function dashboard(l, owned = []) {
       ${leads.length === 0 ? '<li><span>No enquiries yet. Businesses with a filled-out pitch and a phone number convert roughly twice as often.</span></li>'
         : `<li><span>${leads.length} enquiries at ${money(l.total / leads.length)} each — compare that with your usual cost per lead before raising.</span></li>`}
     </ul>
-    ${secHead(2, 'Enquiries', '問合')}
+    ${secHead(2, 'Enquiries', null)}
     ${leads.length ? `<div class="rows">${leads.map((x, i) => `<div class="row" data-rv="up" data-d="${i}">
       <div class="grow"><div class="rname">${esc(x.name)}</div>
         <div class="body" style="margin-top:6px">${esc(x.message)}</div>

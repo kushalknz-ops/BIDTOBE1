@@ -119,7 +119,7 @@ dialog.cmdk::backdrop{background:rgba(2,4,6,.82);backdrop-filter:blur(8px)}
   cursor:pointer;background:none;font-family:inherit;min-height:34px;transition:border-color .4s,color .4s}
 .cmd-trigger:hover{border-color:var(--bone-dim);color:#fff}
 @media(max-width:900px){.cmd-trigger .ct-label{display:none}}
-@media(max-width:860px){.cmd-trigger{margin-left:auto;padding:8px 10px}.cmd-trigger .kbd{display:none}}
+@media(max-width:960px){.cmd-trigger{margin-left:auto;padding:8px 10px}.cmd-trigger .kbd{display:none}}
 @media(max-width:400px){.cmd-trigger{padding:8px}}
 
 /* ---------------- Tooltip ---------------- */
